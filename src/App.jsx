@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { showFullSite } from './config.js';
+import { WIPPage } from './components/WIPpage.jsx';
 import { coverThen } from './lib/transition.js';
 import Home from './pages/Home.jsx';
 import About from './pages/About.jsx';
@@ -42,6 +44,7 @@ function useInternalLinks() {
 export default function App() {
   const location = useLocation();
   useInternalLinks();
+  if (!showFullSite) return <WIPPage />;
   return (
     <>
       {/* page-change animation: the orange staircase */}
