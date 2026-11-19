@@ -59,7 +59,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* ---------- Nav (matches the floating bar in the page designs) ---------- */
 .navwrap{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;padding-top:12px;margin-bottom:-74px;transition:transform .4s cubic-bezier(.2,.8,.2,1), opacity .6s ease .2s}
+/* Hero pin keeps .in-hero on — never tuck the bar away while Find → Make → Move is active */
 .navwrap.hide{transform:translateY(-130%)}
+.navwrap.in-hero.hide,.navwrap.in-hero.under{transform:none!important}
 .navbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:transparent;border-radius:14px;padding:12px 14px 12px 22px;transition:background .35s, box-shadow .35s}
 .navwrap.solid .navbar{background:rgba(27,27,26,.66);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);box-shadow:0 8px 30px rgba(0,0,0,.18)}
 .navwrap.light.solid .navbar{background:rgba(242,238,228,.7)}
@@ -68,7 +70,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .navwrap.light .menu i{background:var(--black);box-shadow:0 6px 0 var(--black),0 -6px 0 var(--black)}
 .navwrap.light .btn-cream{background:var(--black);color:var(--cream)}
 .navwrap.light .btn-cream:hover{background:var(--orange);color:var(--black)}
-.navwrap .btn-cream,.navwrap .menu i{transition:background .35s, color .35s, box-shadow .35s}
+.navwrap .btn-cream{transition:background .35s, color .35s, box-shadow .35s}
+.navwrap .menu i{transition:transform .3s ease, box-shadow .3s ease, background .35s, color .35s}
 .wm{display:block;aspect-ratio:3392/816;background:url(/img/wordmark.png) center/contain no-repeat}
 .logo .wm{width:132px}
 .word .wm{width:min(100%,1100px);margin:0 auto;opacity:.13}
@@ -80,14 +83,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 @media (max-width:520px){.nav-r .btn{display:none}}
 
 /* ---------- Hero ---------- */
-.hero-pin{position:relative}
+.hero-pin{position:relative;z-index:1}
 .skip-intro{position:absolute;left:max(24px,calc((100vw - 1200px)/2 + 16px));bottom:clamp(14px,2.4vh,26px);z-index:4;pointer-events:auto;border:0;background:none;cursor:pointer;font:600 12px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--grey);display:inline-flex;align-items:center;gap:8px;padding:10px 0;transition:color .25s}
 .skip-intro i{font-style:normal;display:inline-block;transition:transform .25s}
 .skip-intro:hover,.skip-intro:focus-visible{color:var(--cream)}
 .skip-intro:hover i{transform:translateY(3px)}
 html.intro .skip-intro{opacity:0}
 @media (max-width:760px){.skip-intro{bottom:46px}}
-.hero{position:relative;overflow:hidden;touch-action:none;touch-action:pinch-zoom;height:100svh;min-height:640px;display:flex;align-items:center;padding-block:clamp(132px,17vh,184px) clamp(56px,8vh,88px);background:var(--black)}
+/* pan-y so ScrollTrigger owns vertical scroll; stage widgets set their own touch-action where needed */
+.hero{position:relative;overflow:hidden;touch-action:pan-y pinch-zoom;height:100svh;min-height:640px;display:flex;align-items:center;padding-block:clamp(132px,17vh,184px) clamp(56px,8vh,88px);background:var(--black)}
 .hero>.inner{position:relative;z-index:2;width:100%;pointer-events:none}
 .hero-copy{max-width:540px}
 
@@ -119,13 +123,14 @@ html.intro .skip-intro{opacity:0}
 .v-crowd{animation:vCrowd .7s ease-in-out infinite alternate}
 .arrow-clip{clip-path:polygon(50% 0%,100% 45%,68% 45%,68% 100%,32% 100%,32% 45%,0% 45%)}
 #moveL{cursor:pointer;-webkit-tap-highlight-color:transparent}
-#makeL,#moveL{transition:opacity .8s cubic-bezier(.4,0,.2,1), visibility .8s}
 .mv-p{position:absolute}
 .mv-b{position:absolute;inset:0}
 .mv-p i{position:absolute;inset:0;background:#F2EEE3;opacity:.38;transition:background-color .35s ease, opacity .5s ease}
 .mv-p.hot i{background:var(--pc,#F2EEE3);opacity:1}
 .mv-p.dim i{background:#F2EEE3;opacity:.1}
 @keyframes mvBob{0%{transform:translateY(0)}100%{transform:translateY(-6px)}}
+.mv-b.bob{--bob:1s;--bobd:0s}
+.hero.is-move .mv-b.bob{animation:mvBob var(--bob) ease-in-out var(--bobd) infinite alternate}
 @keyframes mvPop{0%{transform:translateY(0) scale(1)}35%{transform:translateY(-16px) scale(1.18)}100%{transform:translateY(0) scale(1)}}
 .mv-ring{position:absolute;left:0;top:0;width:200px;height:200px;margin:-100px 0 0 -100px;border-radius:50%;border:2px solid rgba(242,238,228,.5);opacity:0;pointer-events:none}
 @keyframes mvRing{0%{opacity:.7;transform:scale(.1)}100%{opacity:0;transform:scale(6)}}
@@ -210,21 +215,37 @@ h2.rv{transition-delay:.08s}.sub.rv{transition-delay:.16s}
 .steps button{position:relative;border:0;background:none;padding:10px 12px 14px 0;min-width:104px;text-align:left;font-size:16px;font-weight:500;color:var(--grey);cursor:pointer}
 .steps button[aria-pressed="true"]{color:var(--cream)}
 .steps button .tr{position:absolute;left:0;right:16px;bottom:4px;height:2px;background:rgba(242,238,227,.18)}
-.steps button .pg{position:absolute;left:0;right:16px;bottom:4px;height:2px;background:var(--orange);transform:scaleX(0);transform-origin:0 50%}
-.steps button .pg{transition:transform .2s linear}
+.steps button .pg{position:absolute;left:0;right:16px;bottom:4px;height:2px;background:var(--orange);transform:scaleX(0);transform-origin:0 50%;will-change:transform}
 .steps button[data-k="0"] .pg{background:var(--yellow)}.steps button[data-k="1"] .pg{background:var(--cyan)}
 .hero.hold .steps .pg,.hero.off .steps .pg{animation-play-state:paused}
 @keyframes vProg{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .scenes{display:grid;max-width:600px}
-.scene{grid-area:1/1;display:flex;flex-direction:column;gap:0;opacity:0;visibility:hidden;transform:translateY(22px);filter:blur(6px);transition:opacity .9s cubic-bezier(.4,0,.2,1), transform 1.1s cubic-bezier(.16,1,.3,1), filter .9s ease, visibility .9s}
-.scene.on{opacity:1;visibility:visible;transform:none;filter:none}
-.scene.past{transform:translateY(-22px)}
-/* touch: one swipe moves one screen, so the copy travels like a vertical carousel. The old screen lifts away as the new one rises in (and the reverse going back). */
-.touch .scene{filter:none;transform:translate3d(0,40px,0);transition:opacity .34s cubic-bezier(.4,0,.7,.4), transform .5s cubic-bezier(.45,0,.55,1), visibility 0s linear .5s;will-change:opacity,transform}
-.touch .scene.past{transform:translate3d(0,-40px,0)}
-.touch .scene.on{transform:none;transition:opacity .5s cubic-bezier(.3,.1,.3,1) .16s, transform .72s cubic-bezier(.22,1,.36,1) .16s, visibility 0s}
-#makeL,#moveL,#lens{will-change:opacity}
-.touch #makeL,.touch #moveL{transition:opacity .8s cubic-bezier(.45,0,.25,1), visibility .8s}
+/* No blur — filter:blur during scroll was a major source of hero jank */
+.scene{grid-area:1/1;display:flex;flex-direction:column;gap:0;opacity:0;visibility:hidden;transform:translate3d(0,18px,0);transition:opacity .4s cubic-bezier(.4,0,.2,1), transform .5s cubic-bezier(.16,1,.3,1), visibility .4s;will-change:opacity,transform}
+.scene.on{opacity:1;visibility:visible;transform:none}
+.scene.past{transform:translate3d(0,-18px,0)}
+.touch .scene{transform:translate3d(0,28px,0);transition:opacity .32s cubic-bezier(.4,0,.7,.4), transform .42s cubic-bezier(.22,1,.36,1), visibility 0s linear .42s}
+.touch .scene.past{transform:translate3d(0,-28px,0)}
+.touch .scene.on{transform:none;transition:opacity .4s cubic-bezier(.3,.1,.3,1) .05s, transform .55s cubic-bezier(.22,1,.36,1) .05s, visibility 0s}
+html.rm .scene,html.rm .touch .scene{transform:none;transition:opacity .2s ease, visibility .2s ease}
+html.rm .scene.past,html.rm .touch .scene.past{transform:none}
+html.rm .scene.on,html.rm .touch .scene.on{transform:none;transition:opacity .2s ease, visibility .2s ease}
+/* Stage plates use the same rise-and-fade as the copy. The lens slide sits on .plate so it does not fight the pointer follow. */
+#lens,#makeL,#moveL{opacity:0;visibility:hidden;transition:opacity .4s cubic-bezier(.4,0,.2,1), visibility .4s}
+#makeL,#moveL{translate:0 18px;transition:opacity .4s cubic-bezier(.4,0,.2,1), translate .5s cubic-bezier(.16,1,.3,1), visibility .4s}
+#lens .plate{position:absolute;inset:0;translate:0 18px;transition:translate .5s cubic-bezier(.16,1,.3,1)}
+#lens.on,#makeL.on,#moveL.on{opacity:1;visibility:visible}
+#makeL.on,#moveL.on,#lens.on .plate{translate:none}
+#makeL.past,#moveL.past,#lens.past .plate{translate:0 -18px}
+.touch #makeL,.touch #moveL,.touch #lens .plate{translate:0 28px}
+.touch #lens,.touch #makeL,.touch #moveL{transition:opacity .32s cubic-bezier(.4,0,.7,.4), visibility 0s linear .42s}
+.touch #makeL,.touch #moveL{transition:opacity .32s cubic-bezier(.4,0,.7,.4), translate .42s cubic-bezier(.22,1,.36,1), visibility 0s linear .42s}
+.touch #lens .plate{transition:translate .42s cubic-bezier(.22,1,.36,1)}
+.touch #makeL.past,.touch #moveL.past,.touch #lens.past .plate{translate:0 -28px}
+.touch #lens.on,.touch #makeL.on,.touch #moveL.on{transition:opacity .4s cubic-bezier(.3,.1,.3,1) .05s, visibility 0s}
+.touch #makeL.on,.touch #moveL.on{transition:opacity .4s cubic-bezier(.3,.1,.3,1) .05s, translate .55s cubic-bezier(.22,1,.36,1) .05s, visibility 0s}
+.touch #lens.on .plate{translate:none;transition:translate .55s cubic-bezier(.22,1,.36,1) .05s}
+html.rm #lens,html.rm #makeL,html.rm #moveL,html.rm #lens .plate,html.rm .touch #lens,html.rm .touch #makeL,html.rm .touch #moveL,html.rm .touch #lens .plate{translate:none;transition:opacity .2s ease, visibility .2s ease}
 html.intro .loader{touch-action:none}
 @media (max-width:900px) and (max-height:720px){.hero .scene h1{font-size:40px}.scene p{font-size:16px;margin-bottom:18px}}
 .scene h1{font-size:clamp(46px,6.4vw,92px);font-weight:600;letter-spacing:-.035em;line-height:.98}
@@ -359,12 +380,12 @@ html.intro .loader{touch-action:none}
 
 /* ---------- Full-screen menu ---------- */
 .menu{position:relative;z-index:2}
-.menu i{transition:transform .3s ease, box-shadow .3s ease, background .3s}
+.menu i{position:relative;transition:transform .3s ease, box-shadow .3s ease, background .3s}
+.menu i::after{content:"";position:absolute;left:0;top:0;width:20px;height:2px;background:inherit;transform:rotate(90deg) scale(0);transition:transform .3s ease}
 body.menu-open .menu i{box-shadow:0 0 0 transparent;transform:rotate(45deg)}
-body.menu-open .menu i::after{content:"";position:absolute;left:0;top:0;width:20px;height:2px;background:inherit;transform:rotate(90deg)}
-.menu i{position:relative}
-.sheet{position:fixed;inset:0;z-index:45;background:var(--black) var(--tex-dark);color:var(--cream);padding:calc(env(safe-area-inset-top,0px) + 120px) var(--gr) 40px var(--gl);display:flex;flex-direction:column;justify-content:space-between;clip-path:circle(0% at calc(100% - 60px) 46px);transition:clip-path .7s cubic-bezier(.7,0,.2,1);visibility:hidden}
-body.menu-open .sheet{clip-path:circle(150% at calc(100% - 60px) 46px);visibility:visible}
+body.menu-open .menu i::after{transform:rotate(90deg) scale(1)}
+.sheet{position:fixed;inset:0;z-index:45;background:rgba(27,27,26,.62);color:var(--cream);padding:calc(env(safe-area-inset-top,0px) + 120px) var(--gr) 40px var(--gl);display:flex;flex-direction:column;justify-content:space-between;clip-path:circle(0% at calc(100% - 60px) 46px);visibility:visible;pointer-events:none;-webkit-backdrop-filter:blur(26px) saturate(120%);backdrop-filter:blur(26px) saturate(120%);transition:clip-path .7s cubic-bezier(.8,0,.3,1)}
+body.menu-open .sheet{clip-path:circle(150% at calc(100% - 60px) 46px);pointer-events:auto;transition:clip-path .7s cubic-bezier(.7,0,.2,1)}
 body.menu-open{overflow:hidden}
 .sheet-in{max-width:1200px;margin:0 auto;width:100%;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:40px}
 .sheet nav a{display:flex;align-items:baseline;gap:18px;font-family:var(--display);font-size:clamp(40px,6.4vw,88px);line-height:1.08;text-decoration:none;color:var(--cream);opacity:0;transform:translateY(30px);transition:opacity .5s ease, transform .6s cubic-bezier(.16,1,.3,1), color .2s}
@@ -685,7 +706,7 @@ html.pt-out .pt .tk i{opacity:0;transform:scale(4);transition:transform .26s cub
 /* ---- menu: when it opens, only the logo and the close button stay at the top ---- */
 .menu-open .navwrap{transform:none!important;opacity:1!important}
 .menu-open .navwrap .navbar{background:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-.menu-open .navwrap .nav-r>.btn{opacity:0;visibility:hidden;pointer-events:none}
+.menu-open .navwrap .nav-r>.btn{opacity:0;visibility:hidden;pointer-events:none;transition-delay:.12s}
 .menu-open .navwrap .wm{filter:none!important}
 .menu-open .navwrap .menu i{background:var(--cream)!important}
 .navwrap .nav-r>.btn{transition:opacity .25s ease, visibility .25s, background .35s, color .35s}
@@ -735,8 +756,8 @@ html.pt-out .pt .tk i{opacity:0;transform:scale(4);transition:transform .26s cub
 .room .qb.sel{box-shadow:0 0 0 3px var(--black), 0 14px 26px rgba(27,27,26,.22)!important}
 .room .qb.dim{opacity:.55;filter:none}
 /* ---- menu: a frosted blur of the page behind it, no pattern ---- */
-.sheet{background:rgba(27,27,26,.62)!important;-webkit-backdrop-filter:blur(26px) saturate(120%);backdrop-filter:blur(26px) saturate(120%)}
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.sheet{background:rgba(27,27,26,.96)!important}}
+.sheet{background:rgba(27,27,26,.62)!important;-webkit-backdrop-filter:blur(26px) saturate(120%)!important;backdrop-filter:blur(26px) saturate(120%)!important}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.sheet{background:rgba(27,27,26,.96)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
 
 /* ---- footer: social pages as icons ---- */
 .socials{display:flex;gap:10px;margin-top:6px}

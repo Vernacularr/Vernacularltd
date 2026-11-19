@@ -46,13 +46,15 @@ export default function Page({ path, title, description, bodyClass = '', home = 
     const html = document.documentElement;
     const before = { cls: html.className, style: html.getAttribute('style') };
     const scope = createScope();
+    let pageCleanup;
     scope.run(() => {
-      try { init?.(); } catch (e) { console.error('[page script]', e); }
+      try { pageCleanup = init?.(); } catch (e) { console.error('[page script]', e); }
       try { initPatterns(); } catch (e) { console.error('[patterns]', e); }
     });
     revealPage();
 
     return () => {
+      try { if (typeof pageCleanup === 'function') pageCleanup(); } catch (e) { console.error('[page cleanup]', e); }
       scope.dispose();
       // put <html> back as it was, but keep the page-change classes (pt-*) that are running now
       const pt = [...html.classList].filter((c) => c.startsWith('pt-'));

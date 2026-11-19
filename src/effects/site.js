@@ -55,11 +55,23 @@ addEventListener('scroll',()=>requestAnimationFrame(navState),{passive:true}); n
 
 /* ---- menu ---- */
 const menuBtn=document.getElementById('menuBtn'), sheet=document.getElementById('sheet');
+const menuLinks=[...sheet.querySelectorAll('nav a')];
+let menuFrame=0;
+void sheet.offsetWidth;
 function setMenu(open){
-  document.body.classList.toggle('menu-open',open);
-  menuBtn.setAttribute('aria-expanded',String(open)); menuBtn.setAttribute('aria-label',open?'Close menu':'Open menu');
-  sheet.setAttribute('aria-hidden',String(!open)); sheet.inert=!open;
-  if(open){ nav.classList.remove('hide','light'); } else navState();
+  cancelAnimationFrame(menuFrame);
+  menuLinks.forEach((a,i)=>{
+    const delay=open ? 0.15+i*0.05 : 0.02+(menuLinks.length-1-i)*0.05;
+    a.style.transitionDelay=delay.toFixed(2)+'s';
+  });
+  const apply=()=>{
+    document.body.classList.toggle('menu-open',open);
+    menuBtn.setAttribute('aria-expanded',String(open)); menuBtn.setAttribute('aria-label',open?'Close menu':'Open menu');
+    sheet.setAttribute('aria-hidden',String(!open)); sheet.inert=!open;
+    if(open) nav.classList.remove('hide','light'); else navState();
+  };
+  if(open) menuFrame=requestAnimationFrame(apply);
+  else apply();
 }
 sheet.inert=true;
 menuBtn.addEventListener('click',()=>setMenu(!document.body.classList.contains('menu-open')));
@@ -91,7 +103,18 @@ const thread=document.createElement('div'); thread.className='thread'; thread.se
 thread.innerHTML=[6,7,8,9].map(i=>{ const k=U[i]; return `<i style="left:${r2(k[0]*UU-8*UU)}px;top:${r2(k[2]*VV-3*VV)}px;width:${r2((k[1]-k[0])*UU)}px;height:${r2(VV)}px"></i>`; }).join('');
 document.body.appendChild(thread);
 const anchors=[...document.querySelectorAll('[data-anchor]')], footEl=document.querySelector('.foot');
-let thT=null, thC=null;
+let thT=null, thC=null, thId=0;
+function thTick(){
+  thId=0;
+  if(!thT||!thC) return;
+  const k=reduce?1:.2;
+  const dx=thT.x-thC.x, dy=thT.y-thC.y, dop=thT.op-thC.op;
+  thC.x+=dx*k; thC.y+=dy*k; thC.op+=dop*(reduce?1:.14);
+  thread.style.transform=`translate(${thC.x.toFixed(1)}px,${thC.y.toFixed(1)}px) scale(.14)`;
+  thread.style.opacity=thC.op.toFixed(3);
+  if(Math.abs(dx)>0.4||Math.abs(dy)>0.4||Math.abs(dop)>0.012) thId=requestAnimationFrame(thTick);
+}
+function kickThread(){ if(!thId) thId=requestAnimationFrame(thTick); }
 function drawThread(){
   if(!anchors.length) return;
   const H=innerHeight, mid=H*.5; let best=null, bd=1e9;
@@ -102,11 +125,6 @@ function drawThread(){
   thT={x:best.x,y:best.y,op}; if(!thC) thC={...thT};
   const fr=footEl&&footEl.getBoundingClientRect(); thread.classList.toggle('ink', !!fr && best.y>fr.top);
 }
-(function thLoop(){
-  if(thT && thC){ const k=reduce?1:.14; thC.x+=(thT.x-thC.x)*k; thC.y+=(thT.y-thC.y)*k; thC.op+=(thT.op-thC.op)*(reduce?1:.08);
-    thread.style.transform=`translate(${thC.x.toFixed(1)}px,${thC.y.toFixed(1)}px) scale(.14)`; thread.style.opacity=thC.op.toFixed(3); }
-  requestAnimationFrame(thLoop);
-})();
 
 /* ---- footer wordmark rises letter by letter ---- */
 const footWord=document.getElementById('footWord'), fsl=footWord?[...footWord.querySelectorAll('.fs')]:[];
@@ -217,7 +235,7 @@ const vas=document.querySelectorAll('[data-va]');
 if(vas.length){ const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('seen'); io.unobserve(e.target); } }),{threshold:.35}); vas.forEach(v=>io.observe(v)); }
 
 let raf=0;
-function frame(){ raf=0; drawSeams(); drawThread(); drawFoot(); drawFocus(); touchFocus(); }
+function frame(){ raf=0; drawSeams(); drawThread(); kickThread(); drawFoot(); drawFocus(); touchFocus(); }
 addEventListener('scroll',()=>{ if(!raf) raf=requestAnimationFrame(frame); },{passive:true});
 addEventListener('resize',frame); frame(); setTimeout(frame,600);
 })();

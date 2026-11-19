@@ -20,9 +20,10 @@ export default function Home() {
           <div className="stage-wrap" aria-hidden="true">
             <div className="stage" id="stage">
               <div id="fieldL" />
-              <div id="lens" style={{ position: "absolute", left: "0", top: "0", width: "1440px", height: "900px", transformOrigin: "960px 430px", transition: "transform .55s cubic-bezier(.2,.8,.2,1), opacity .5s ease" }}>
+              <div id="lens" className="on" style={{ position: "absolute", left: "0", top: "0", width: "1440px", height: "900px", transformOrigin: "960px 430px", willChange: "transform, opacity" }}>
+                <div className="plate">
                 <div style={{ position: "absolute", left: "1192px", top: "507px", width: "330px", height: "58px", transformOrigin: "0 29px", transform: "rotate(24deg)" }}>
-                  <div style={{ position: "absolute", left: "34px", top: "12px", width: "300px", height: "46px", borderRadius: "0 23px 23px 0", background: "#000", opacity: ".45", filter: "blur(14px)", transform: "translateY(26px)" }} />
+                  <div style={{ position: "absolute", left: "20px", top: "18px", width: "320px", height: "56px", borderRadius: "0 28px 28px 0", background: "radial-gradient(ellipse at 55% 50%, rgba(0,0,0,.5) 0%, rgba(0,0,0,0) 72%)", transform: "translateY(18px)" }} />
                   <div style={{ position: "absolute", left: "44px", top: "6px", width: "286px", height: "46px", borderRadius: "0 23px 23px 0", background: "linear-gradient(180deg,#3D3D39 0%,#1C1C1A 38%,#0B0B0A 62%,#262623 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.18)" }} />
                   <div style={{ position: "absolute", left: "70px", top: "13px", width: "230px", height: "3px", borderRadius: "2px", background: "rgba(255,255,255,.14)" }} />
                   <div style={{ position: "absolute", left: "0", top: "0", width: "56px", height: "58px", borderRadius: "6px", background: "linear-gradient(180deg,#F7F5EF 0%,#BDB9AF 34%,#6E6B65 56%,#A7A399 78%,#E4E0D6 100%)" }} />
@@ -32,12 +33,13 @@ export default function Home() {
                 <div style={{ position: "absolute", left: "710px", top: "180px", width: "500px", height: "500px", borderRadius: "50%", background: "conic-gradient(from 200deg,#F7F5EF,#8F8C85 18%,#E9E5DC 34%,#67645F 52%,#D7D3C9 70%,#9A968E 86%,#F7F5EF)", boxShadow: "0 46px 90px rgba(0,0,0,.6),0 12px 24px rgba(0,0,0,.4)" }} />
                 <div style={{ position: "absolute", left: "720px", top: "190px", width: "480px", height: "480px", borderRadius: "50%", background: "linear-gradient(315deg,#FFFFFF 0%,#A8A49B 45%,#4E4C48 100%)" }} />
                 <div style={{ position: "absolute", left: "730px", top: "200px", width: "460px", height: "460px", borderRadius: "50%", overflow: "hidden", background: "#1B1B1A" }}>
-                  <div id="glassL" style={{ position: "absolute", left: "0", top: "0", width: "0", height: "0", transition: "transform .55s cubic-bezier(.2,.8,.2,1)" }} />
+                  <div id="glassL" style={{ position: "absolute", left: "0", top: "0", width: "0", height: "0" }} />
                   <div style={{ position: "absolute", left: "0", top: "0", width: "460px", height: "460px", borderRadius: "50%", boxShadow: "inset 0 14px 40px rgba(0,0,0,.55),inset 0 -6px 18px rgba(255,255,255,.06)", background: "radial-gradient(circle at 30% 24%,rgba(255,255,255,.16) 0%,rgba(255,255,255,.04) 32%,rgba(255,255,255,0) 52%)" }} />
                   <div style={{ position: "absolute", left: "22px", top: "22px", width: "416px", height: "416px", borderRadius: "50%", borderTop: "3px solid rgba(255,255,255,.42)", borderLeft: "2px solid rgba(255,255,255,.16)", borderRight: "2px solid transparent", borderBottom: "2px solid transparent", boxSizing: "border-box", transform: "rotate(-18deg)" }} />
                 </div>
+                </div>
               </div>
-              <div id="makeL" style={{ position: "absolute", inset: "0", display: "none" }}>
+              <div id="makeL" style={{ position: "absolute", inset: "0" }}>
                 <div className="vf">
                   <i className="c1" />
                   <i className="c2" />
@@ -88,7 +90,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <div id="moveL" style={{ position: "absolute", inset: "0", display: "none" }}>
+              <div id="moveL" style={{ position: "absolute", inset: "0" }}>
                 <div className="mv-ring" id="mvRing1" />
                 <div className="mv-ring" id="mvRing2" />
                 <div id="crowd" />

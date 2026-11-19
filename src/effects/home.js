@@ -1,5 +1,11 @@
 /* Homepage behaviour: intro loader, hero steps, scenes, FAQ, menu and footer effects.
    Runs once each time the homepage mounts (see components/Page.jsx). */
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
+
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
 export default function initHome() {
 (function(){var h=document.documentElement;try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;if(sessionStorage.getItem('vernIntro'))return;}catch(e){}h.classList.add('intro');
 var b=document.getElementById('lgBuild'),C=9,R=2,html='';
@@ -8,8 +14,14 @@ html+='<span class="lgf" style="left:'+(c*w).toFixed(3)+'%;top:'+(r*hh)+'%;width
 b.innerHTML=html;requestAnimationFrame(function(){requestAnimationFrame(function(){document.getElementById('loader').classList.add('go');});});
 })();
 
-(() => {
+return (() => {
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const scrollJobs=[];
+let scrollRaf=0;
+addEventListener('scroll',()=>{
+  if(scrollRaf) return;
+  scrollRaf=requestAnimationFrame(()=>{ scrollRaf=0; for(let i=0;i<scrollJobs.length;i++) scrollJobs[i](); });
+},{passive:true});
 const TOUCH = matchMedia('(hover: none)').matches;
 if(TOUCH) document.documentElement.classList.add('touch');
 const COL = {
@@ -43,7 +55,7 @@ const U=[[15,16,4,5],[12,15,5,6],[7,8,4,5],[4,7,5,6],[14,16,3,4],[12,14,4,5],[11
 const PW=160.665, PH=232.617, UU=PW/16, VV=PH/6, OX=-83.335, OY=-29.842;
 const r2=n=>+n.toFixed(2), md=(a,n)=>((a%n)+n)%n;
 function rng(seed){ let s=seed; return ()=>{ s|=0; s=s+0x6D2B79F5|0; let t=Math.imul(s^s>>>15,1|s); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
-let scene=0, on=false, prev=null, moved=false, mx=960, my=430, lx=960, ly=430, armT=0;
+let scene=0, on=false, prev=null, moved=false, mx=960, my=430, lx=960, ly=430, armT=0, heroVis=true, stageBox=null;
 let SC=1, TX=0, TY=0;
 /* a steady viewport height: mobile address bars change innerHeight as you scroll, which made the pinned hero jump */
 let VH=innerHeight, VW=innerWidth;
@@ -64,6 +76,7 @@ function layout(){
     TX=W/2-1030*SC; TY=tb+gap+270*SC-450*SC;
   }
   stage.style.transform=`translate(${TX}px,${TY}px) scale(${SC})`;
+  stageBox=null;
 }
 layout(); if(document.fonts) document.fonts.ready.then(layout); setTimeout(layout,600);
 
@@ -98,15 +111,26 @@ const S=1.7, GR=230, glassL=document.getElementById('glassL'), lensEl=document.g
   glassL.appendChild(frag);
 })();
 let pick=null;
+let gsapOwnsStage=false; // ScrollTrigger timeline owns lens/make/move opacity
+/* The rim and the magnified field share one short follow, so the view stays stuck to the glass. */
+gsap.set(lensEl,{ x:lx-960, y:ly-430, scale:1 });
+gsap.set(glassL,{ x:GR-lx*S, y:GR-ly*S });
+const follow=reduce?0:0.18;
+const lensXTo=gsap.quickTo(lensEl,'x',{ duration:follow, ease:'power3.out' });
+const lensYTo=gsap.quickTo(lensEl,'y',{ duration:follow, ease:'power3.out' });
+const glassXTo=gsap.quickTo(glassL,'x',{ duration:follow, ease:'power3.out' });
+const glassYTo=gsap.quickTo(glassL,'y',{ duration:follow, ease:'power3.out' });
+function trackLens(){
+  lensXTo(lx-960); lensYTo(ly-430);
+  const lock=scene===0&&on&&pick;
+  const cx=lock?pick.tx+8*UU:lx, cy=lock?pick.ty+3*VV:ly;
+  glassXTo(GR-cx*S); glassYTo(GR-cy*S);
+}
 function drawField(){
   let cd=1e9; pick=null;
   for(const g of gps){ if(g.i!==7) continue; const d=Math.hypot(g.tx+8*UU-lx, g.ty+3*VV-ly); if(d<cd){cd=d;pick=g;} }
-  lensEl.style.opacity=scene===0?1:0;
-  lensEl.style.transform=`translate(${r2(lx-960)}px,${r2(ly-430)}px) scale(${scene===0?1:.85})`;
+  trackLens();
   const live=scene===0&&on;
-  /* once the pattern settles, the glass centres on the piece it found */
-  const cx=live&&pick?pick.tx+8*UU:lx, cy=live&&pick?pick.ty+3*VV:ly;
-  glassL.style.transform=`translate(${r2(GR-cx*S)}px,${r2(GR-cy*S)}px)`;
   for(const g of gps){
     const found=pick&&g.tx===pick.tx&&g.ty===pick.ty&&g.i>=6&&g.i<=9;
     const o=live?(found?1:.55):.22, tf=live?'translate(0px,0px) rotate(0deg)':g.scatter, c=live&&found?'#F75115':'#F2EEE3';
@@ -159,15 +183,17 @@ clap.addEventListener('click',()=>{ if(scene!==1) return; holdBriefly(); if(!on)
 strip.addEventListener('pointerdown',e=>{ sDrag=true; sPx=e.clientX; strip.setPointerCapture(e.pointerId); holdBriefly(); });
 strip.addEventListener('pointermove',e=>{ if(!sDrag) return; const dx=(e.clientX-sPx)/SC/1.75; sPx=e.clientX; sOff+=dx; sV=dx; holdBriefly(); });
 const sUp=()=>{ sDrag=false; }; strip.addEventListener('pointerup',sUp); strip.addEventListener('pointercancel',sUp);
-(function roll(t){
-  if(scene===1 && !stage.classList.contains('idle')){
+let rollId=0;
+function roll(){
+  if(!(scene===1 && heroVis)){ rollId=0; return; }
+  if(!stage.classList.contains('idle')){
     if(!sDrag){ sV+=(-.7-sV)*.03; sOff+=reduce?0:sV; }
     stripTrack.style.transform=`translateX(${(-md(-sOff,LOOPW)).toFixed(1)}px)`;
     const f=Math.floor((performance.now()-mkStart)/1000*24), ss=Math.floor(f/24), pad=n=>String(n).padStart(2,'0');
     mkTC.textContent=`00:${pad(Math.floor(ss/60)%60)}:${pad(ss%60)}:${pad(f%24)}`;
   }
-  requestAnimationFrame(roll);
-})();
+  rollId=requestAnimationFrame(roll);
+}
 
 /* MOVE: a crowd of cream pieces. The orange idea is passed hand to hand, reaches the channels, then the crowd forms an arrow */
 const moveL=document.getElementById('moveL'), crowdEl=document.getElementById('crowd'), pills=[...moveL.querySelectorAll('.mv-pill')], rings=[document.getElementById('mvRing1'),document.getElementById('mvRing2')], mvp=[];
@@ -185,7 +211,7 @@ const MCX=1060, MCY=470, MRX=295, MRY=250, MO={x:900,y:620};
         const el=document.createElement('div'); el.className='mv-p';
         el.style.cssText=`left:${x+1.5}px;top:${y+1.5}px;width:${w-3}px;height:${h-3}px`;
         const b=document.createElement('div'); b.className='mv-b';
-        if(!reduce) b.style.animation=`mvBob ${(.7+r()*.6).toFixed(2)}s ease-in-out ${(-r()*1.2).toFixed(2)}s infinite alternate`;
+        if(!reduce){ b.classList.add('bob'); b.style.setProperty('--bob',(.7+r()*.6).toFixed(2)+'s'); b.style.setProperty('--bobd',(-r()*1.2).toFixed(2)+'s'); }
         const ii=document.createElement('i'); if(e>.84) ii.style.opacity=.2; b.appendChild(ii); el.appendChild(b); frag.appendChild(el);
         mvp.push({el,b,ii,cx,cy,edge:e>.84,arrow:inArrow(cx,cy),t:((cx-MCX)-(cy-MCY))/Math.SQRT2,ox:0,oy:0,st:''});
       }
@@ -233,16 +259,24 @@ moveL.addEventListener('pointerdown',e=>{ if(scene!==2) return;
   if(Math.hypot((x-MCX)/MRX,(y-MCY)/MRY)>1.25) return;
   holdBriefly(); if(!on){ on=true; clearTimeout(armT); render(); } mvWave(x,y); });
 /* moving the mouse through the crowd nudges people out of the way */
-(function stir(){
-  if(scene===2 && !stage.classList.contains('idle') && !reduce){
+let stirId=0;
+function stir(){
+  if(!(scene===2 && heroVis && !reduce)){ stirId=0; return; }
+  if(!stage.classList.contains('idle')){
     const R=150;
     for(const p of mvp){ const dx=p.cx-mx, dy=p.cy-my, d=Math.hypot(dx,dy);
       let tx=0, ty=0; if(moved && d<R && d>0){ const f=(1-d/R)*22; tx=dx/d*f; ty=dy/d*f; }
       p.ox+=(tx-p.ox)*.15; p.oy+=(ty-p.oy)*.15;
       const st=`translate(${p.ox.toFixed(1)}px,${p.oy.toFixed(1)}px)`; if(st!==p.st){ p.el.style.translate=`${p.ox.toFixed(1)}px ${p.oy.toFixed(1)}px`; p.st=st; } }
   }
-  requestAnimationFrame(stir);
-})();
+  stirId=requestAnimationFrame(stir);
+}
+function syncLoops(){
+  if(scene===1 && heroVis){ if(!rollId) rollId=requestAnimationFrame(roll); }
+  else if(rollId){ cancelAnimationFrame(rollId); rollId=0; }
+  if(scene===2 && heroVis && !reduce){ if(!stirId) stirId=requestAnimationFrame(stir); }
+  else if(stirId){ cancelAnimationFrame(stirId); stirId=0; }
+}
 heroEl.addEventListener('pointerleave',()=>{ moved=false; });
 
 /* the travelling orange piece */
@@ -256,168 +290,234 @@ function coarseHint(){ const c=matchMedia('(pointer: coarse)').matches;
           :['Move your mouse to look around with the lens.','Drag the film to scrub through it.','Move through the crowd. Click anywhere in it to start a new wave.']; }
 function render(){
   drawField();
-  for(const [el,k] of [[makeL,1],[moveL,2]]){ el.style.display='block'; el.style.opacity=scene===k?1:0; el.style.visibility=scene===k?'visible':'hidden'; }
   let tf, o, od;
   if(scene===0){ const tpx=lx, tpy=ly; tf=`translate(${r2(tpx)}px,${r2(tpy)}px) scale(${S}) rotate(0deg)`; o=on?0:(prev!=null?1:0); od=on?'.3s ease 1.1s':'.2s ease 0s'; }
   else if(scene===1){ tf=`translate(${IDEA.x}px,${IDEA.y}px) scale(.45) rotate(-4deg)`; o=on?0:1; od=on?'.3s ease .45s':'.2s ease 0s'; }
   else { tf=`translate(${mvOrigin.x}px,${mvOrigin.y}px) scale(1.1) rotate(0deg)`; o=on?0:1; od=on?'.25s ease 0s':'.2s ease 0s'; }
   token.style.transition=`transform 1.1s cubic-bezier(.65,0,.25,1), opacity ${od}`; token.style.transform=tf; token.style.opacity=o;
 }
-function go(k){
-  prev=scene; scene=k; on=false;
+function paintStage(k){
+  [lensEl, makeL, moveL].forEach((el,i)=>{
+    el.style.opacity='';
+    el.style.visibility='';
+    el.classList.toggle('on', i===k);
+    el.classList.toggle('past', i<k);
+  });
+}
+function applyScene(k){
+  prev=scene; scene=k;
+  heroEl.classList.toggle('is-make',k===1);
+  heroEl.classList.toggle('is-move',k===2);
   steps.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===k)));
   scenesEls.forEach((el,i)=>{ el.classList.toggle('on',i===k); el.classList.toggle('past',i<k); });
   hint.textContent=HINTS[k];
+  paintStage(k);
+  syncLoops();
+}
+/* Pose the incoming plate while it is still hidden, then fade it in with the copy. */
+function showScene(k){
+  if(k===scene) return;
+  if(k!==2) mvReset();
+  mvOrigin={...MO};
+  if(k===1) drawCube();
+  applyScene(k);
+  if(k===2) drawMove();
+}
+function go(k){
+  if(k===scene) return;
+  on=false;
+  applyScene(k);
   if(k!==2) mvReset(); mvOrigin={...MO}; render(); if(k===1) drawCube(); if(k===2) drawMove();
   clearTimeout(armT); armT=setTimeout(()=>{ on=true; render(); if(scene===1) drawCube(); if(scene===2) drawMove(); }, k===0?450:1050);
 }
-steps.forEach(b=>{
-  b.addEventListener('click',()=>{ const k=+b.dataset.k; if(k!==scene) go(k); if(scrollY>2) glideTo(0); });
-});
 let holdT=0;
 function holdBriefly(){ heroEl.classList.add('hold'); clearTimeout(holdT); holdT=setTimeout(()=>heroEl.classList.remove('hold'),2500); }
 heroEl.addEventListener('pointerdown',holdBriefly);
 /* pause motion and the loop while the hero is off screen */
-let heroVis=true;
-new IntersectionObserver(es=>{ heroVis=es[0].isIntersecting; stage.classList.toggle('idle',!heroVis); heroEl.classList.toggle('off',!heroVis); },{threshold:0}).observe(heroEl);
+new IntersectionObserver(es=>{ heroVis=es[0].isIntersecting; stage.classList.toggle('idle',!heroVis); heroEl.classList.toggle('off',!heroVis); syncLoops(); },{threshold:0}).observe(heroEl);
 const ribEl=document.querySelector('.ribbons');
 new IntersectionObserver(es=>{ ribEl.classList.toggle('idle',!es[0].isIntersecting); },{threshold:0}).observe(ribEl);
-let lm=0, raf=0;
+scrollJobs.push(()=>{ stageBox=null; });
+function stagePoint(e){
+  if(!stageBox) stageBox=stage.getBoundingClientRect();
+  const w=stageBox.width||1, h=stageBox.height||1;
+  return { x:(e.clientX-stageBox.left)/w*1440, y:(e.clientY-stageBox.top)/h*900 };
+}
 heroEl.addEventListener('pointermove',e=>{
-  const now=Date.now(); if(now-lm<40) return; lm=now;
-  const r=stage.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*1440, y=(e.clientY-r.top)/r.height*900;
-  mx=x; my=y; moved=true; holdBriefly();
-  if(x>700){ lx=Math.max(830,Math.min(1170,x)); ly=Math.max(300,Math.min(560,y)); }
-  if(!raf) raf=requestAnimationFrame(()=>{ raf=0; render(); });
-});
+  const p=stagePoint(e);
+  mx=p.x; my=p.y; moved=true; holdBriefly();
+  if(p.x>700){ lx=Math.max(830,Math.min(1170,p.x)); ly=Math.max(300,Math.min(560,p.y)); trackLens(); }
+},{passive:true});
 render();
-/* ---- The hero is a vertical carousel ----
-   It sits at the top of the page and does not scroll. One scroll, swipe or arrow key moves exactly one screen:
-   Find, Make, Move. One more carries the page down to the logo strip, and from there the page scrolls normally.
-   Scrolling back up past the logo strip returns to the hero, which is always waiting on Find.
-   The page never rests half way between the hero and the logo strip. */
+
+/* ---- Hero: one scrubbed timeline owns the stage ----
+   Find fades into Make, Make into Move. Snap lands on timeline labels.
+   Copy swaps once per scene. Nothing else writes these opacities. */
 const heroPin=document.getElementById('heroPin'), scrollCue=document.getElementById('scrollCue'), pgs=steps.map(b=>b.querySelector('.pg'));
 const holdEl=document.getElementById('logoHold'), lgEl=holdEl.querySelector('.logos'), rootEl=document.documentElement;
-const heroEnd=()=>Math.max(0,Math.round(holdEl.getBoundingClientRect().top+scrollY));   // where the hero ends and the logo strip reaches the top
 const inIntro=()=>rootEl.classList.contains('intro'), menuOpen=()=>document.body.classList.contains('menu-open');
-function pinLayout(){ heroEl.style.top=''; heroPin.style.height=''; pinScroll(); }
-function pinScroll(){
-  if(innerWidth!==VW || Math.abs(innerHeight-VH)>140){ syncVH(); layout(); pinLayout(); return; }
-  // once the hero is off screen it goes back to Find, ready for the next visit
-  if(scene!==0 && !glide && heroEl.getBoundingClientRect().bottom<=1) go(0);
-  wheelGate();
-}
+const SCENES=3;
+let heroTween=null, heroST=null, refreshT=0, introLocked=false, heroLeft=false;
 
-/* gliding the page between the hero (top) and the logo strip */
-let glide=null, stepLock=0, wSwallow=false; const STEP_MS=850;   // each step holds for this long, so a fast scroll still shows Find, Make and Move one at a time
-function glideStop(){ if(glide){ glide=null; rootEl.style.scrollBehavior=''; } }
-function glideTo(y){
-  y=Math.max(0,Math.round(y)); const from=scrollY; wSwallow=true;
-  rootEl.style.scrollBehavior='auto';
-  if(reduce || Math.abs(from-y)<2){ window.scrollTo(0,y); glide=null; rootEl.style.scrollBehavior=''; pinScroll(); return; }
-  const dur=Math.min(900,Math.max(420,Math.abs(y-from)*.9));
-  stepLock=Math.max(stepLock,performance.now()+dur);
-  glide={from,to:y,t0:0,dur}; requestAnimationFrame(glideStep);
-}
-function glideStep(now){
-  const g=glide; if(!g){ rootEl.style.scrollBehavior=''; return; }
-  if(!g.t0) g.t0=now;
-  const t=Math.min(1,(now-g.t0)/g.dur), e=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
-  window.scrollTo(0,g.from+(g.to-g.from)*e);
-  if(t<1) requestAnimationFrame(glideStep); else { glide=null; rootEl.style.scrollBehavior=''; pinScroll(); }
-}
-/* one step of the carousel; from Move, the step forward leaves the hero for the logo strip */
-function carStep(dir,lock){
-  const now=performance.now(); if(now<stepLock) return;
-  if(dir>0 && scene===2){ stepLock=now+lock; glideTo(heroEnd()); return; }
-  const k=scene+dir; if(k<0 || k>2) return;
-  stepLock=now+lock; go(k);
-}
+gsap.set(pgs,{ scaleX:0, transformOrigin:'0% 50%' });
+if(reduce) rootEl.classList.add('rm');
 
-/* wheel and trackpad. A trackpad flick keeps sending events for a second or two as it coasts, so a new step
-   needs a new push (a pause, or the stream speeding up again), never the tail of the last one. */
-let wT=0, wPeak=0, wMin=0, wheelOn=false;
-function wheelFresh(e,dy){
-  const t=e.timeStamp||performance.now(), a=Math.abs(dy), gap=t-wT; wT=t;   // the event's own time, so a busy page cannot fake a pause
-  if(gap>240){ wPeak=wMin=a; return true; }                                  // a new push only after the wheel or trackpad has stopped
-  if(a>wPeak){ wPeak=a; wMin=a; } else if(a<wMin) wMin=a;
-  return false;
+function sceneFromProgress(p){
+  const t=gsap.utils.clamp(0,1,p);
+  if(t<1/3) return 0;
+  if(t<2/3) return 1;
+  return 2;
 }
-function onWheel(e){
-  if(e.ctrlKey || menuOpen()) return;
-  let dy=e.deltaY; if(e.deltaMode===1) dy*=32; else if(e.deltaMode===2) dy*=VH;
-  if(!dy || Math.abs(e.deltaX)>Math.abs(dy)) return;
-  const y=scrollY, end=heroEnd();
-  if(inIntro()){ if(y<=end) e.preventDefault(); return; }
-  const fresh=wheelFresh(e,dy);
-  if(fresh) wSwallow=false;
-  if(glide){ e.preventDefault(); return; }
-  if(wSwallow){ if(y<=end+2) e.preventDefault(); return; }   // the tail of the push that started a glide goes no further
-  if(y<=2){                                   // the hero is in place: it behaves as a carousel
-    if(dy<0 && scene===0) return;             // nothing above Find
-    e.preventDefault();
-    if(fresh) carStep(dy>0?1:-1,STEP_MS);
-    return;
+function updateBars(p){
+  pgs.forEach((pg,i)=>{
+    const start=i/SCENES, end=(i+1)/SCENES;
+    gsap.set(pg,{ scaleX:gsap.utils.clamp(0,1,(p-start)/(end-start)) });
+  });
+  if(scrollCue) scrollCue.classList.toggle('gone', p>0.04);
+}
+function pinTravel(){ return Math.round(Math.max(VH, innerHeight)*SCENES); }
+function progressToY(p){
+  if(!heroST) return 0;
+  return heroST.start+(heroST.end-heroST.start)*gsap.utils.clamp(0,1,p);
+}
+function scrollToScene(k, instant){
+  if(!heroST){ showScene(k); return; }
+  const y=progressToY(k/(SCENES-1));
+  if(instant || reduce){ window.scrollTo(0,y); showScene(k); return; }
+  gsap.to(window,{ duration:0.55, scrollTo:{ y, autoKill:true }, ease:'power2.out', overwrite:'auto' });
+}
+function scrollPastHero(instant){
+  if(!heroST) return;
+  const y=heroST.end+8;
+  if(instant || reduce){ window.scrollTo(0,y); return; }
+  gsap.to(window,{ duration:0.65, scrollTo:{ y, autoKill:true }, ease:'power2.out', overwrite:'auto' });
+}
+function killHeroScroll(){
+  gsapOwnsStage=false;
+  gsap.killTweensOf(window);
+  if(heroTween){ heroTween.scrollTrigger?.kill(); heroTween.kill(); heroTween=null; heroST=null; }
+  ScrollTrigger.getById('home-hero')?.kill();
+}
+function createHeroScroll(){
+  killHeroScroll();
+  heroLeft=false;
+  gsapOwnsStage=true;
+  // Labels only. The plates crossfade in CSS, on the same beat as the copy.
+  heroTween=gsap.timeline({
+    defaults:{ ease:'none' },
+    scrollTrigger:{
+      id:'home-hero',
+      trigger:heroPin,
+      pin:true,
+      anticipatePin:1,
+      start:()=>0,
+      end:()=>`+=${pinTravel()}`,
+      scrub:reduce?true:0.45,
+      snap:reduce?false:{
+        snapTo:'labels',
+        duration:{ min:0.25, max:0.45 },
+        delay:0.05,
+        ease:'power1.inOut',
+        inertia:false,
+      },
+      invalidateOnRefresh:true,
+      onRefresh:(self)=>{
+        heroPin.dataset.stStart=String(Math.round(self.start));
+        heroPin.dataset.stEnd=String(Math.round(self.end));
+      },
+      onUpdate:(self)=>{
+        if(heroLeft && self.direction===1) return;
+        heroLeft=false;
+        updateBars(self.progress);
+        showScene(sceneFromProgress(self.progress));
+      },
+      onLeave:()=>{ heroLeft=true; gsap.killTweensOf(window); },
+      onEnterBack:(self)=>{ heroLeft=false; updateBars(self.progress); showScene(sceneFromProgress(self.progress)); },
+      onEnter:()=>{ heroLeft=false; },
+    },
+  });
+  heroTween
+    .addLabel('find', 0)
+    .to({}, { duration:1 }, 0)
+    .addLabel('make', 1)
+    .to({}, { duration:1 }, 1)
+    .addLabel('move', 2);
+  heroST=heroTween.scrollTrigger;
+}
+function refreshHero(){
+  syncVH();
+  layout();
+  syncLg();
+  ScrollTrigger.refresh();
+}
+function scheduleRefresh(){
+  clearTimeout(refreshT);
+  refreshT=setTimeout(refreshHero, 120);
+}
+function unlockIntroScroll(){
+  if(!introLocked) return;
+  introLocked=false;
+  rootEl.style.overflow='';
+  document.body.style.overflow='';
+  createHeroScroll();
+  refreshHero();
+  if(heroST){ updateBars(heroST.progress); showScene(sceneFromProgress(heroST.progress)); }
+}
+function armHeroScroll(){
+  if(inIntro()){
+    introLocked=true;
+    rootEl.style.overflow='hidden';
+    document.body.style.overflow='hidden';
+    const mo=new MutationObserver(()=>{ if(!inIntro()){ mo.disconnect(); unlockIntroScroll(); } });
+    mo.observe(rootEl,{ attributes:true, attributeFilter:['class'] });
+    setTimeout(()=>{ if(!heroST) unlockIntroScroll(); }, 2800);
+  } else {
+    createHeroScroll();
+    refreshHero();
   }
-  if(y<end-1 || (y<=end+2 && dy<0)){ e.preventDefault(); glideTo(dy>0?end:0); }   // between the hero and the logos: carry on to whichever end you are heading for
 }
-/* only listen for the wheel near the hero, so the rest of the page keeps the browser's own fast scrolling */
-function wheelGate(){ const need=scrollY<=heroEnd()+VH*.5; if(need===wheelOn) return; wheelOn=need;
-  if(need) addEventListener('wheel',onWheel,{passive:false}); else removeEventListener('wheel',onWheel,{passive:false}); }
 
-/* touch: a swipe on the hero steps the carousel; the hero itself never scrolls under a finger */
-let touching=false, touchT=0, tY=0, tX=0, tOk=false, tUsed=false;
-heroEl.addEventListener('touchstart',e=>{ tOk=e.touches.length===1; tUsed=false; if(tOk){ tY=e.touches[0].clientY; tX=e.touches[0].clientX; } },{passive:true});
-heroEl.addEventListener('touchmove',e=>{
-  if(!tOk || e.touches.length!==1 || menuOpen()) return;
-  const dy=tY-e.touches[0].clientY, dx=tX-e.touches[0].clientX;
-  if(e.cancelable && Math.abs(dy)+Math.abs(dx)>6) e.preventDefault();
-  if(tUsed || glide || inIntro() || Math.abs(dy)<26 || Math.abs(dy)<Math.abs(dx)*1.2) return;
-  tUsed=true;
-  const dir=dy>0?1:-1;
-  if(scrollY<=2) carStep(dir,STEP_MS); else glideTo(dir>0?heroEnd():0);
-},{passive:false});
+steps.forEach(b=>{
+  b.addEventListener('click',()=>{
+    const k=+b.dataset.k;
+    if(!heroST){ go(k); return; }
+    scrollToScene(k);
+  });
+});
 
-/* keyboard */
 addEventListener('keydown',e=>{
   if(e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || menuOpen() || inIntro()) return;
   const el=e.target, tag=(el && el.tagName)||'';
   if(/^(INPUT|TEXTAREA|SELECT)$/.test(tag) || (el && el.isContentEditable)) return;
   const sp=e.key===' '||e.key==='Spacebar';
   if(sp && /^(BUTTON|A|SUMMARY)$/.test(tag)) return;
-  const down=e.key==='ArrowDown'||e.key==='PageDown'||(sp&&!e.shiftKey), up=e.key==='ArrowUp'||e.key==='PageUp'||(sp&&e.shiftKey);
+  const down=e.key==='ArrowDown'||e.key==='PageDown'||(sp&&!e.shiftKey);
+  const up=e.key==='ArrowUp'||e.key==='PageUp'||(sp&&e.shiftKey);
   if(!down && !up) return;
-  if(glide){ e.preventDefault(); return; }
-  const y=scrollY, end=heroEnd();
-  if(y<=2){ if(up && scene===0) return; e.preventDefault(); carStep(down?1:-1,STEP_MS); }
-  else if(y<end-1){ e.preventDefault(); glideTo(down?end:0); }
+  if(!heroST) return;
+  const y=scrollY;
+  if(y<heroST.start-8 || y>heroST.end+8) return;
+  e.preventDefault();
+  const cur=Math.round(heroST.progress*(SCENES-1));
+  if(down && cur>=SCENES-1){ scrollPastHero(); return; }
+  if(up && cur<=0){ scrollToScene(0); return; }
+  scrollToScene(cur+(down?1:-1));
 });
 
-document.getElementById('skipIntro').addEventListener('click',()=>{ stepLock=0; wSwallow=false; glideTo(heroEnd()); });
-/* safety net: however the page got there (scrollbar, momentum, a link), it never rests between the hero and the logos */
-let lastSY=scrollY, dirDown=true, idleT=0, psRaf=0;
-function settle(){
-  if(glide || inIntro()) return;
-  if(touching && performance.now()-touchT<1200) return;
-  const y=scrollY, end=heroEnd(); if(y<=1 || y>=end-1) return;
-  const tol=VH*.06;
-  glideTo(y>end-tol?end:(y<tol?0:(dirDown?end:0)));
-}
-const settleSoon=()=>{ clearTimeout(idleT); idleT=setTimeout(settle,120); };
-addEventListener('scroll',()=>{
-  const y=scrollY; if(Math.abs(y-lastSY)>.5){ dirDown=y>lastSY; lastSY=y; }
-  if(!psRaf) psRaf=requestAnimationFrame(()=>{ psRaf=0; pinScroll(); });
-  if(glide) clearTimeout(idleT); else settleSoon();
-},{passive:true});
-const tTrack=e=>{ touching=e.touches.length>0; touchT=performance.now(); if(!touching) settleSoon(); };
-addEventListener('touchstart',e=>{ tTrack(e); if(glide && !heroEl.contains(e.target)) glideStop(); },{passive:true});
-addEventListener('touchmove',e=>{ touchT=performance.now(); if(glide && !heroEl.contains(e.target)) glideStop(); },{passive:true});
-addEventListener('touchend',tTrack,{passive:true}); addEventListener('touchcancel',tTrack,{passive:true});
-addEventListener('load',settleSoon);
-const syncLg=()=>holdEl.style.setProperty('--lgH',lgEl.offsetHeight+'px'); syncLg(); addEventListener('resize',syncLg); addEventListener('load',syncLg);
-addEventListener('resize',()=>{ if(syncVH()||innerWidth>=900){ layout(); pinLayout(); } });
-addEventListener('load',()=>{ syncVH(); layout(); pinLayout(); });
-pinLayout(); setTimeout(pinLayout,700); if(document.fonts) document.fonts.ready.then(pinLayout);
+document.getElementById('skipIntro').addEventListener('click',()=>{
+  if(introLocked) unlockIntroScroll();
+  else if(!heroST){ createHeroScroll(); refreshHero(); }
+  scrollPastHero();
+});
+
+const syncLg=()=>holdEl.style.setProperty('--lgH',lgEl.offsetHeight+'px');
+syncLg();
+addEventListener('resize',()=>{ if(syncVH()||innerWidth>=900) layout(); scheduleRefresh(); });
+addEventListener('load',()=>{ syncVH(); layout(); scheduleRefresh(); });
+if(document.fonts) document.fonts.ready.then(scheduleRefresh);
+armHeroScroll();
+setTimeout(scheduleRefresh,700);
+
 const introOn=document.documentElement.classList.contains('intro');
 armT=setTimeout(()=>{ on=true; render(); }, introOn?2250:450);
 
@@ -450,7 +550,7 @@ function drawAbout(){
   }
   phs.forEach((b,k)=>b.classList.toggle('on',p>.06+k*.15));
 }
-addEventListener('scroll',()=>requestAnimationFrame(drawAbout),{passive:true}); addEventListener('resize',drawAbout);
+scrollJobs.push(drawAbout); addEventListener('resize',drawAbout);
 drawAbout(); if(document.fonts) document.fonts.ready.then(drawAbout);
 
 /* ---- FAQ: ask the crowd ---- */
@@ -510,15 +610,29 @@ function drawFoot(){
   const p=reduce?1:Math.max(0,(innerHeight-r.top)/(r.height*1.25));
   fsl.forEach((el,k)=>{ const t=Math.min(1,Math.max(0,p*1.6-k*0.1)), eased=1-Math.pow(1-t,3); el.style.transform=`translateY(${((1-eased)*105).toFixed(1)}%)`; });
 }
-addEventListener('scroll',()=>requestAnimationFrame(drawFoot),{passive:true}); addEventListener('resize',drawFoot); drawFoot();
+scrollJobs.push(drawFoot); addEventListener('resize',drawFoot); drawFoot();
 
 /* ---- Menu ---- */
 const menuBtn=document.getElementById('menuBtn'), sheet=document.getElementById('sheet');
+const menuLinks=[...sheet.querySelectorAll('nav a')];
+let menuFrame=0;
+/* Closed clip must be painted once before the first open, or the circle skips and the blur flashes full-screen. */
+void sheet.offsetWidth;
 function setMenu(open){
-  document.body.classList.toggle('menu-open',open);
-  menuBtn.setAttribute('aria-expanded',String(open)); menuBtn.setAttribute('aria-label',open?'Close menu':'Open menu');
-  sheet.setAttribute('aria-hidden',String(!open));
-  if(open){ nav.classList.remove('hide','light'); }
+  cancelAnimationFrame(menuFrame);
+  menuLinks.forEach((a,i)=>{
+    const delay=open ? 0.15+i*0.05 : 0.02+(menuLinks.length-1-i)*0.05;
+    a.style.transitionDelay=delay.toFixed(2)+'s';
+  });
+  const apply=()=>{
+    document.body.classList.toggle('menu-open',open);
+    menuBtn.setAttribute('aria-expanded',String(open)); menuBtn.setAttribute('aria-label',open?'Close menu':'Open menu');
+    sheet.setAttribute('aria-hidden',String(!open));
+    if(open) nav.classList.remove('hide','light');
+  };
+  // Commit the link delays, then expand on the next frame so the first wipe has a real start.
+  if(open) menuFrame=requestAnimationFrame(apply);
+  else apply();
 }
 menuBtn.addEventListener('click',()=>setMenu(!document.body.classList.contains('menu-open')));
 sheet.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMenu(false)));
@@ -583,9 +697,9 @@ function touchFocus(cards){
     else { const q=Math.min(.999,Math.max(0,(VH*.8-pick.top)/(VH*.6))); on=pick.els[Math.floor(q*pick.els.length)]; } }
   cards.forEach(el=>el.classList.toggle('focus',el===on));
 }
-if(TOUCH){ const fitCards=[...document.querySelectorAll('.pc')]; let fRaf=0;
-  const runFocus=()=>{ fRaf=0; touchFocus(pillarCards); touchFocus(fitCards); };
-  addEventListener('scroll',()=>{ if(!fRaf) fRaf=requestAnimationFrame(runFocus); },{passive:true}); addEventListener('resize',runFocus); runFocus(); }
+if(TOUCH){ const fitCards=[...document.querySelectorAll('.pc')];
+  const runFocus=()=>{ touchFocus(pillarCards); touchFocus(fitCards); };
+  scrollJobs.push(runFocus); addEventListener('resize',runFocus); runFocus(); }
 
 /* ---- Sliding colour pills + Find/Make/Move lighting up on scroll ---- */
 const fmmT=document.getElementById('fmmTitle'), fmmSpans=[...fmmT.querySelectorAll('span')];
@@ -594,20 +708,39 @@ function drawSvc(){
   const r=fmmT.getBoundingClientRect(), p=Math.min(1,Math.max(0,(innerHeight*.85-r.top)/(innerHeight*.5)));
   fmmSpans.forEach((s,k)=>s.classList.toggle('lit', reduce || p>(k+.4)/3.4));
 }
-addEventListener('scroll',()=>requestAnimationFrame(drawSvc),{passive:true});
+scrollJobs.push(drawSvc);
 
-/* ---- Nav: clear at the top, hides on the way down, comes back on the way up, and takes on the colour of the section under it ---- */
+/* ---- Nav: stays put through the hero; after the hero it can hide on the way down ---- */
 const nav=document.getElementById('navwrap'), creams=[...document.querySelectorAll('.cream')];
 let lastNavY=scrollY;
-function navState(){
-  const y=scrollY, down=y>lastNavY+4, up=y<lastNavY-4;
-  if(y<80){ nav.classList.remove('hide','solid'); }
-  else { nav.classList.add('solid'); if(down) nav.classList.add('hide'); else if(up) nav.classList.remove('hide'); }
-  if(Math.abs(y-lastNavY)>4) lastNavY=y;
-  { const hr=holdEl.getBoundingClientRect(); nav.classList.toggle('under', hr.top<=2 && hr.bottom>lgEl.offsetHeight+2); } // the frozen logo strip owns the top edge
-  const probe=50; nav.classList.toggle('light', creams.some(s=>{ const r=s.getBoundingClientRect(); return r.top<=probe && r.bottom>probe; }));
+function inHeroZone(){
+  if(heroST) return scrollY<=heroST.end+1;
+  return heroEl.getBoundingClientRect().bottom>60;
 }
-addEventListener('scroll',()=>requestAnimationFrame(navState),{passive:true});
+function navState(){
+  const y=scrollY, down=y>lastNavY+4, up=y<lastNavY-4, heroZone=inHeroZone();
+  nav.classList.toggle('in-hero', heroZone);
+  if(heroZone){
+    // Fixed at the top for the whole Find → Make → Move pin — never hide here
+    nav.classList.remove('hide','under');
+    if(y<80) nav.classList.remove('solid');
+    else nav.classList.add('solid');
+  } else if(y<80){
+    nav.classList.remove('hide','solid');
+  } else {
+    nav.classList.add('solid');
+    if(down) nav.classList.add('hide');
+    else if(up) nav.classList.remove('hide');
+  }
+  if(Math.abs(y-lastNavY)>4) lastNavY=y;
+  // Logo strip owns the top edge only once we've left the hero
+  if(!heroZone){
+    const hr=holdEl.getBoundingClientRect();
+    nav.classList.toggle('under', hr.top<=2 && hr.bottom>lgEl.offsetHeight+2);
+  }
+  const probe=50; nav.classList.toggle('light', !heroZone && creams.some(s=>{ const r=s.getBoundingClientRect(); return r.top<=probe && r.bottom>probe; }));
+}
+scrollJobs.push(navState);
 navState();
 
 /* ---- Welcome: the loop draws, the wordmark writes in, the curtain lifts, the hero arrives ---- */
@@ -669,12 +802,19 @@ function drawThread(){
   thT={x,y,sc,rot,op}; if(!thC) thC={...thT};
   const fr=footEl.getBoundingClientRect(); thread.classList.toggle('ink', y>fr.top);
 }
-let thT=null, thC=null;
-(function thLoop(){ // ease towards the target so the hand-off between sections stays smooth
-  if(thT && thC){ const k=reduce?1:.14; for(const key of ['x','y','sc','rot']) thC[key]+=(thT[key]-thC[key])*k; thC.op+=(thT.op-thC.op)*(reduce?1:.08); thread.style.opacity=thC.op.toFixed(3);
-    thread.style.transform=`translate(${thC.x.toFixed(1)}px,${thC.y.toFixed(1)}px) rotate(${thC.rot.toFixed(1)}deg) scale(${thC.sc.toFixed(3)})`; }
-  requestAnimationFrame(thLoop);
-})();
+let thT=null, thC=null, thId=0;
+function thTick(){
+  thId=0;
+  if(!thT||!thC) return;
+  const k=reduce?1:.2;
+  let live=false;
+  for(const key of ['x','y','sc','rot']){ const d=thT[key]-thC[key]; thC[key]+=d*k; if(Math.abs(d)>0.4) live=true; }
+  const od=thT.op-thC.op; thC.op+=od*(reduce?1:.14); if(Math.abs(od)>0.012) live=true;
+  thread.style.opacity=thC.op.toFixed(3);
+  thread.style.transform=`translate(${thC.x.toFixed(1)}px,${thC.y.toFixed(1)}px) rotate(${thC.rot.toFixed(1)}deg) scale(${thC.sc.toFixed(3)})`;
+  if(live) thId=requestAnimationFrame(thTick);
+}
+function kickThread(){ if(!thId) thId=requestAnimationFrame(thTick); }
 /* ---- Softer handoffs: the next section's colour rises out of the brand mosaic ---- */
 const seams=[...document.querySelectorAll('.seam')].map((el,n)=>{ const r=rng(40+n), cols=[]; let x=0;
   while(x<100){ const w=[1.1,1.6,1.6,2.2][Math.floor(r()*4)], b=document.createElement('b');
@@ -699,9 +839,23 @@ function drawRail(){
 /* ---- Every section opens the same way ---- */
 const rvIO=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); rvIO.unobserve(e.target); } }),{threshold:.2});
 document.querySelectorAll('.rv').forEach(el=>rvIO.observe(el));
-let oneRaf=0;
-function drawOne(){ oneRaf=0; drawThread(); drawSeams(); drawRail(); }
-addEventListener('scroll',()=>{ if(!oneRaf) oneRaf=requestAnimationFrame(drawOne); },{passive:true});
+function drawOne(){ drawThread(); drawSeams(); drawRail(); kickThread(); }
+scrollJobs.push(drawOne);
 addEventListener('resize',drawOne); drawOne(); setTimeout(drawOne,800);
+
+return ()=>{
+  clearTimeout(refreshT);
+  clearTimeout(holdT);
+  clearTimeout(armT);
+  cancelAnimationFrame(scrollRaf);
+  cancelAnimationFrame(rollId);
+  cancelAnimationFrame(stirId);
+  cancelAnimationFrame(thId);
+  cancelAnimationFrame(menuFrame);
+  if(introLocked){ introLocked=false; rootEl.style.overflow=''; document.body.style.overflow=''; }
+  gsap.killTweensOf([lensEl, glassL, window]);
+  killHeroScroll();
+  rootEl.classList.remove('rm');
+};
 })();
 }
