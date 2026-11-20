@@ -434,6 +434,9 @@ body.menu-open .sheet nav a{opacity:1;transform:none}
 .lg:hover{color:var(--cream)}
 .lg svg{width:1.15em;height:1.15em;flex:none;fill:currentColor;transition:fill .25s ease}
 .lg:hover svg{fill:var(--orange)}
+.lg-img img{display:block;width:auto;opacity:.6;transition:opacity .25s ease}
+.lg-img:hover img{opacity:1}
+.lg-more{font-size:.6em;font-weight:600}
 @media (prefers-reduced-motion: reduce){.logo-track{animation:none}}
 
 /* ---------- Welcome loader + hero entrance ---------- */

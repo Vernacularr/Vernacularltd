@@ -522,18 +522,24 @@ const introOn=document.documentElement.classList.contains('intro');
 armT=setTimeout(()=>{ on=true; render(); }, introOn?2250:450);
 
 /* ---- Ticker ---- */
-/* ---- Client logos (placeholders until we have the real files) ---- */
+/* ---- Client logos (files in public/img/clients) ---- */
+// [name, file, height in em: wordmarks shorter, round badges taller]
 const LOGOS=[
-  ['Okra &amp; Co','font-weight:700;letter-spacing:-.02em','<circle cx="12" cy="12" r="10"/>'],
-  ['LUMEN','font-weight:600;letter-spacing:.22em','<path d="M12 2l10 18H2z"/>'],
-  ['harbor','font-weight:500;font-style:italic','<rect x="3" y="3" width="18" height="18" rx="3"/>'],
-  ['Zuri','font-family:var(--display);font-weight:700','<path d="M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20zm0 5a5 5 0 1 1 0 10a5 5 0 1 1 0-10z"/>'],
-  ['KINETIC','font-weight:800;letter-spacing:.04em','<path d="M3 3h8v8H3zM13 13h8v8h-8z"/>'],
-  ['basil.','font-weight:600','<path d="M12 2c6 4 8 10 0 20C4 12 6 6 12 2z"/>'],
-  ['Northline','font-weight:400;letter-spacing:.02em','<path d="M3 21V3l18 18V3"/>'],
-  ['EMBER','font-family:var(--display);letter-spacing:.12em','<path d="M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/>']
+  ['Adidas','adidas',1.5],
+  ['Google','google',1.1],
+  ['Cadbury','cadbury',1.4],
+  ['Nivea','nivea',1.7],
+  ['Vaseline','vaseline',1.5],
+  ['Martell','martell',1.4],
+  ['inDrive','indrive',1],
+  ['Glovo','glovo',1.15],
+  ['Chowdeck','chowdeck',1.7],
+  ['Bolt Food','bolt-food',1.6],
+  ['Leatherback','leatherback',.55],
+  ['Revoo','revoo',.7],
+  ['TomTom','tomtom',1.5]
 ];
-const lseq=LOGOS.map(([n,st,svg])=>`<span class="lg" style="${st}" aria-label="${n.replace('&amp;','and')} (placeholder logo)"><svg viewBox="0 0 24 24" aria-hidden="true">${svg}</svg>${n}</span>`).join('');
+const lseq=LOGOS.map(([n,f,h])=>`<span class="lg lg-img"><img src="/img/clients/${f}.png" alt="${n}" style="height:${h}em" decoding="async"></span>`).join('')+`<span class="lg lg-more">and more</span>`;
 document.getElementById('logoTrack').innerHTML=lseq+lseq;
 
 /* ---- About: one plain statement, coming into focus slowly as you scroll ---- */
