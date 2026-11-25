@@ -95,7 +95,7 @@ export default function ForBrands() {
                   </select>
                 </div>
               </div>
-              <button className="btn btn-black ct-submit" type="submit">{"Submit & Pick a Time"}</button>
+              <button className="btn btn-black ct-submit" type="submit">Submit</button>
               <p className="ct-err" role="alert" hidden>Please fill in the highlighted fields.</p>
             </form>
           </div>
