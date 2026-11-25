@@ -91,7 +91,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 html.intro .skip-intro{opacity:0}
 @media (max-width:760px){.skip-intro{bottom:46px}}
 /* pan-y so ScrollTrigger owns vertical scroll; stage widgets set their own touch-action where needed */
-.hero{position:relative;overflow:hidden;touch-action:pan-y pinch-zoom;height:100svh;min-height:640px;display:flex;align-items:center;padding-block:clamp(132px,17vh,184px) clamp(56px,8vh,88px);background:var(--black)}
+.hero{position:relative;overflow:hidden;touch-action:pinch-zoom;height:100svh;min-height:640px;display:flex;align-items:center;padding-block:clamp(132px,17vh,184px) clamp(56px,8vh,88px);background:var(--black)}
 .hero>.inner{position:relative;z-index:2;width:100%;pointer-events:none}
 .hero-copy{max-width:540px}
 
@@ -221,21 +221,24 @@ h2.rv{transition-delay:.08s}.sub.rv{transition-delay:.16s}
 @keyframes vProg{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .scenes{display:grid;max-width:600px}
 /* No blur — filter:blur during scroll was a major source of hero jank */
-.scene{grid-area:1/1;display:flex;flex-direction:column;gap:0;opacity:0;visibility:hidden;transform:translate3d(0,18px,0);transition:opacity .4s cubic-bezier(.4,0,.2,1), transform .5s cubic-bezier(.16,1,.3,1), visibility .4s;will-change:opacity,transform}
-.scene.on{opacity:1;visibility:visible;transform:none}
-.scene.past{transform:translate3d(0,-18px,0)}
-.touch .scene{transform:translate3d(0,28px,0);transition:opacity .32s cubic-bezier(.4,0,.7,.4), transform .42s cubic-bezier(.22,1,.36,1), visibility 0s linear .42s}
-.touch .scene.past{transform:translate3d(0,-28px,0)}
-.touch .scene.on{transform:none;transition:opacity .4s cubic-bezier(.3,.1,.3,1) .05s, transform .55s cubic-bezier(.22,1,.36,1) .05s, visibility 0s}
+/* each step's copy rises in softly; a light blur only (a heavy one stuttered) */
+.scene{grid-area:1/1;display:flex;flex-direction:column;gap:0;opacity:0;visibility:hidden;transform:translate3d(0,22px,0);filter:blur(3px);transition:opacity .9s cubic-bezier(.4,0,.2,1), transform 1.1s cubic-bezier(.16,1,.3,1), filter .9s ease, visibility .9s;will-change:opacity,transform}
+.scene.on{opacity:1;visibility:visible;transform:none;filter:none}
+.scene.past{transform:translate3d(0,-22px,0)}
+/* touch: one swipe moves one screen, so the copy travels like a vertical carousel */
+.touch .scene{filter:none;transform:translate3d(0,40px,0);transition:opacity .34s cubic-bezier(.4,0,.7,.4), transform .5s cubic-bezier(.45,0,.55,1), visibility 0s linear .5s}
+.touch .scene.past{transform:translate3d(0,-40px,0)}
+.touch .scene.on{transform:none;transition:opacity .5s cubic-bezier(.3,.1,.3,1) .16s, transform .72s cubic-bezier(.22,1,.36,1) .16s, visibility 0s}
 html.rm .scene,html.rm .touch .scene{transform:none;transition:opacity .2s ease, visibility .2s ease}
 html.rm .scene.past,html.rm .touch .scene.past{transform:none}
 html.rm .scene.on,html.rm .touch .scene.on{transform:none;transition:opacity .2s ease, visibility .2s ease}
 /* Stage plates use the same rise-and-fade as the copy. The lens slide sits on .plate so it does not fight the pointer follow. */
-#lens,#makeL,#moveL{opacity:0;visibility:hidden;transition:opacity .4s cubic-bezier(.4,0,.2,1), visibility .4s}
-#makeL,#moveL{translate:0 18px;transition:opacity .4s cubic-bezier(.4,0,.2,1), translate .5s cubic-bezier(.16,1,.3,1), visibility .4s}
-#lens .plate{position:absolute;inset:0;translate:0 18px;transition:translate .5s cubic-bezier(.16,1,.3,1)}
+#lens,#makeL,#moveL{opacity:0;visibility:hidden;transition:opacity .8s cubic-bezier(.4,0,.2,1), visibility .8s}
+#makeL,#moveL{translate:0 18px;transition:opacity .8s cubic-bezier(.4,0,.2,1), translate 1s cubic-bezier(.16,1,.3,1), visibility .8s}
+#lens .plate{position:absolute;inset:0;translate:0 18px;scale:.92;transition:translate 1s cubic-bezier(.16,1,.3,1), scale 1s cubic-bezier(.16,1,.3,1)}
 #lens.on,#makeL.on,#moveL.on{opacity:1;visibility:visible}
 #makeL.on,#moveL.on,#lens.on .plate{translate:none}
+#lens.on .plate,.touch #lens .plate,html.rm #lens .plate{scale:1}
 #makeL.past,#moveL.past,#lens.past .plate{translate:0 -18px}
 .touch #makeL,.touch #moveL,.touch #lens .plate{translate:0 28px}
 .touch #lens,.touch #makeL,.touch #moveL{transition:opacity .32s cubic-bezier(.4,0,.7,.4), visibility 0s linear .42s}

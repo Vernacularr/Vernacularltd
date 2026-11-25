@@ -1,10 +1,6 @@
 /* Homepage behaviour: intro loader, hero steps, scenes, FAQ, menu and footer effects.
    Runs once each time the homepage mounts (see components/Page.jsx). */
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
-
-gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 export default function initHome() {
 (function(){var h=document.documentElement;try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;if(sessionStorage.getItem('vernIntro'))return;}catch(e){}h.classList.add('intro');
@@ -111,11 +107,10 @@ const S=1.7, GR=230, glassL=document.getElementById('glassL'), lensEl=document.g
   glassL.appendChild(frag);
 })();
 let pick=null;
-let gsapOwnsStage=false; // ScrollTrigger timeline owns lens/make/move opacity
 /* The rim and the magnified field share one short follow, so the view stays stuck to the glass. */
 gsap.set(lensEl,{ x:lx-960, y:ly-430, scale:1 });
 gsap.set(glassL,{ x:GR-lx*S, y:GR-ly*S });
-const follow=reduce?0:0.18;
+const follow=reduce?0:0.55;   // the glass trails the pointer a little, so it feels weighty
 const lensXTo=gsap.quickTo(lensEl,'x',{ duration:follow, ease:'power3.out' });
 const lensYTo=gsap.quickTo(lensEl,'y',{ duration:follow, ease:'power3.out' });
 const glassXTo=gsap.quickTo(glassL,'x',{ duration:follow, ease:'power3.out' });
@@ -350,141 +345,102 @@ heroEl.addEventListener('pointermove',e=>{
 },{passive:true});
 render();
 
-/* ---- Hero: one scrubbed timeline owns the stage ----
-   Find fades into Make, Make into Move. Snap lands on timeline labels.
-   Copy swaps once per scene. Nothing else writes these opacities. */
-const heroPin=document.getElementById('heroPin'), scrollCue=document.getElementById('scrollCue'), pgs=steps.map(b=>b.querySelector('.pg'));
+/* ---- The hero is a vertical carousel ----
+   It sits at the top of the page and does not scroll. One scroll, swipe or arrow key moves exactly one screen:
+   Find, Make, Move. One more carries the page down to the logo strip, and from there the page scrolls normally.
+   Scrolling back up past the logo strip returns to the hero, which is always waiting on Find.
+   The page never rests half way between the hero and the logo strip. */
+const heroPin=document.getElementById('heroPin'), scrollCue=document.getElementById('scrollCue');
 const holdEl=document.getElementById('logoHold'), lgEl=holdEl.querySelector('.logos'), rootEl=document.documentElement;
+const heroEnd=()=>Math.max(0,Math.round(holdEl.getBoundingClientRect().top+scrollY));   // where the hero ends and the logo strip reaches the top
 const inIntro=()=>rootEl.classList.contains('intro'), menuOpen=()=>document.body.classList.contains('menu-open');
-const SCENES=3;
-let heroTween=null, heroST=null, refreshT=0, introLocked=false, heroLeft=false;
-
-gsap.set(pgs,{ scaleX:0, transformOrigin:'0% 50%' });
 if(reduce) rootEl.classList.add('rm');
+function pinLayout(){ heroEl.style.top=''; heroPin.style.height=''; pinScroll(); }
+function pinScroll(){
+  if(innerWidth!==VW || Math.abs(innerHeight-VH)>140){ syncVH(); layout(); pinLayout(); return; }
+  // once the hero is off screen it goes back to Find, ready for the next visit
+  if(scene!==0 && !glide && heroEl.getBoundingClientRect().bottom<=1) go(0);
+  if(scrollCue) scrollCue.classList.toggle('gone', scene!==0 || scrollY>2);
+  wheelGate();
+}
 
-function sceneFromProgress(p){
-  const t=gsap.utils.clamp(0,1,p);
-  if(t<1/3) return 0;
-  if(t<2/3) return 1;
-  return 2;
+/* gliding the page between the hero (top) and the logo strip */
+let glide=null, glideId=0, stepLock=0, wSwallow=false; const STEP_MS=850;   // each step holds for this long, so a fast scroll still shows Find, Make and Move one at a time
+function glideStop(){ if(glide){ glide=null; cancelAnimationFrame(glideId); rootEl.style.scrollBehavior=''; } }
+function glideTo(y){
+  y=Math.max(0,Math.round(y)); const from=scrollY; wSwallow=true;
+  rootEl.style.scrollBehavior='auto';
+  if(reduce || Math.abs(from-y)<2){ window.scrollTo(0,y); glide=null; rootEl.style.scrollBehavior=''; pinScroll(); return; }
+  const dur=Math.min(900,Math.max(420,Math.abs(y-from)*.9));
+  stepLock=Math.max(stepLock,performance.now()+dur);
+  glide={from,to:y,t0:0,dur}; glideId=requestAnimationFrame(glideStep);
 }
-function updateBars(p){
-  pgs.forEach((pg,i)=>{
-    const start=i/SCENES, end=(i+1)/SCENES;
-    gsap.set(pg,{ scaleX:gsap.utils.clamp(0,1,(p-start)/(end-start)) });
-  });
-  if(scrollCue) scrollCue.classList.toggle('gone', p>0.04);
+function glideStep(now){
+  const g=glide; if(!g){ rootEl.style.scrollBehavior=''; return; }
+  if(!g.t0) g.t0=now;
+  const t=Math.min(1,(now-g.t0)/g.dur), e=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  window.scrollTo(0,g.from+(g.to-g.from)*e);
+  if(t<1) glideId=requestAnimationFrame(glideStep); else { glide=null; rootEl.style.scrollBehavior=''; pinScroll(); }
 }
-function pinTravel(){ return Math.round(Math.max(VH, innerHeight)*SCENES); }
-function progressToY(p){
-  if(!heroST) return 0;
-  return heroST.start+(heroST.end-heroST.start)*gsap.utils.clamp(0,1,p);
+/* one step of the carousel; from Move, the step forward leaves the hero for the logo strip */
+function carStep(dir,lock){
+  const now=performance.now(); if(now<stepLock) return;
+  if(dir>0 && scene===2){ stepLock=now+lock; glideTo(heroEnd()); return; }
+  const k=scene+dir; if(k<0 || k>2) return;
+  stepLock=now+lock; go(k); pinScroll();
 }
-function scrollToScene(k, instant){
-  if(!heroST){ showScene(k); return; }
-  const y=progressToY(k/(SCENES-1));
-  if(instant || reduce){ window.scrollTo(0,y); showScene(k); return; }
-  gsap.to(window,{ duration:0.55, scrollTo:{ y, autoKill:true }, ease:'power2.out', overwrite:'auto' });
+
+/* wheel and trackpad. A trackpad flick keeps sending events for a second or two as it coasts, so a new step
+   needs a new push (a pause, or the stream speeding up again), never the tail of the last one. */
+let wT=0, wPeak=0, wMin=0, wheelOn=false;
+function wheelFresh(e,dy){
+  const t=e.timeStamp||performance.now(), a=Math.abs(dy), gap=t-wT; wT=t;   // the event's own time, so a busy page cannot fake a pause
+  if(gap>240){ wPeak=wMin=a; return true; }                                  // a new push only after the wheel or trackpad has stopped
+  if(a>wPeak){ wPeak=a; wMin=a; } else if(a<wMin) wMin=a;
+  return false;
 }
-function scrollPastHero(instant){
-  if(!heroST) return;
-  const y=heroST.end+8;
-  if(instant || reduce){ window.scrollTo(0,y); return; }
-  gsap.to(window,{ duration:0.65, scrollTo:{ y, autoKill:true }, ease:'power2.out', overwrite:'auto' });
-}
-function killHeroScroll(){
-  gsapOwnsStage=false;
-  gsap.killTweensOf(window);
-  if(heroTween){ heroTween.scrollTrigger?.kill(); heroTween.kill(); heroTween=null; heroST=null; }
-  ScrollTrigger.getById('home-hero')?.kill();
-}
-function createHeroScroll(){
-  killHeroScroll();
-  heroLeft=false;
-  gsapOwnsStage=true;
-  // Labels only. The plates crossfade in CSS, on the same beat as the copy.
-  heroTween=gsap.timeline({
-    defaults:{ ease:'none' },
-    scrollTrigger:{
-      id:'home-hero',
-      trigger:heroPin,
-      pin:true,
-      anticipatePin:1,
-      start:()=>0,
-      end:()=>`+=${pinTravel()}`,
-      scrub:reduce?true:0.45,
-      snap:reduce?false:{
-        snapTo:'labels',
-        duration:{ min:0.25, max:0.45 },
-        delay:0.05,
-        ease:'power1.inOut',
-        inertia:false,
-      },
-      invalidateOnRefresh:true,
-      onRefresh:(self)=>{
-        heroPin.dataset.stStart=String(Math.round(self.start));
-        heroPin.dataset.stEnd=String(Math.round(self.end));
-      },
-      onUpdate:(self)=>{
-        if(heroLeft && self.direction===1) return;
-        heroLeft=false;
-        updateBars(self.progress);
-        showScene(sceneFromProgress(self.progress));
-      },
-      onLeave:()=>{ heroLeft=true; gsap.killTweensOf(window); },
-      onEnterBack:(self)=>{ heroLeft=false; updateBars(self.progress); showScene(sceneFromProgress(self.progress)); },
-      onEnter:()=>{ heroLeft=false; },
-    },
-  });
-  heroTween
-    .addLabel('find', 0)
-    .to({}, { duration:1 }, 0)
-    .addLabel('make', 1)
-    .to({}, { duration:1 }, 1)
-    .addLabel('move', 2);
-  heroST=heroTween.scrollTrigger;
-}
-function refreshHero(){
-  syncVH();
-  layout();
-  syncLg();
-  ScrollTrigger.refresh();
-}
-function scheduleRefresh(){
-  clearTimeout(refreshT);
-  refreshT=setTimeout(refreshHero, 120);
-}
-function unlockIntroScroll(){
-  if(!introLocked) return;
-  introLocked=false;
-  rootEl.style.overflow='';
-  document.body.style.overflow='';
-  createHeroScroll();
-  refreshHero();
-  if(heroST){ updateBars(heroST.progress); showScene(sceneFromProgress(heroST.progress)); }
-}
-function armHeroScroll(){
-  if(inIntro()){
-    introLocked=true;
-    rootEl.style.overflow='hidden';
-    document.body.style.overflow='hidden';
-    const mo=new MutationObserver(()=>{ if(!inIntro()){ mo.disconnect(); unlockIntroScroll(); } });
-    mo.observe(rootEl,{ attributes:true, attributeFilter:['class'] });
-    setTimeout(()=>{ if(!heroST) unlockIntroScroll(); }, 2800);
-  } else {
-    createHeroScroll();
-    refreshHero();
+function onWheel(e){
+  if(e.ctrlKey || menuOpen()) return;
+  let dy=e.deltaY; if(e.deltaMode===1) dy*=32; else if(e.deltaMode===2) dy*=VH;
+  if(!dy || Math.abs(e.deltaX)>Math.abs(dy)) return;
+  const y=scrollY, end=heroEnd();
+  if(inIntro()){ if(y<=end) e.preventDefault(); return; }
+  const fresh=wheelFresh(e,dy);
+  if(fresh) wSwallow=false;
+  if(glide){ e.preventDefault(); return; }
+  if(wSwallow){ if(y<=end+2) e.preventDefault(); return; }   // the tail of the push that started a glide goes no further
+  if(y<=2){                                   // the hero is in place: it behaves as a carousel
+    if(dy<0 && scene===0) return;             // nothing above Find
+    e.preventDefault();
+    if(fresh) carStep(dy>0?1:-1,STEP_MS);
+    return;
   }
+  if(y<end-1 || (y<=end+2 && dy<0)){ e.preventDefault(); glideTo(dy>0?end:0); }   // between the hero and the logos: carry on to whichever end you are heading for
 }
+/* only listen for the wheel near the hero, so the rest of the page keeps the browser's own fast scrolling.
+   This is added and removed after setup, so the cleanup below removes it by hand. */
+function wheelGate(){ const need=scrollY<=heroEnd()+VH*.5; if(need===wheelOn) return; wheelOn=need;
+  if(need) window.addEventListener('wheel',onWheel,{passive:false}); else window.removeEventListener('wheel',onWheel,{passive:false}); }
 
+/* touch: a swipe on the hero steps the carousel; the hero itself never scrolls under a finger */
+let touching=false, touchT=0, tY=0, tX=0, tOk=false, tUsed=false;
+heroEl.addEventListener('touchstart',e=>{ tOk=e.touches.length===1; tUsed=false; if(tOk){ tY=e.touches[0].clientY; tX=e.touches[0].clientX; } },{passive:true});
+heroEl.addEventListener('touchmove',e=>{
+  if(!tOk || e.touches.length!==1 || menuOpen()) return;
+  const dy=tY-e.touches[0].clientY, dx=tX-e.touches[0].clientX;
+  if(e.cancelable && Math.abs(dy)+Math.abs(dx)>6) e.preventDefault();
+  if(tUsed || glide || inIntro() || Math.abs(dy)<26 || Math.abs(dy)<Math.abs(dx)*1.2) return;
+  tUsed=true;
+  const dir=dy>0?1:-1;
+  if(scrollY<=2) carStep(dir,STEP_MS); else glideTo(dir>0?heroEnd():0);
+},{passive:false});
+
+/* the Find / Make / Move tabs jump straight to that step */
 steps.forEach(b=>{
-  b.addEventListener('click',()=>{
-    const k=+b.dataset.k;
-    if(!heroST){ go(k); return; }
-    scrollToScene(k);
-  });
+  b.addEventListener('click',()=>{ const k=+b.dataset.k; if(k!==scene) go(k); if(scrollY>2) glideTo(0); else pinScroll(); });
 });
 
+/* keyboard */
 addEventListener('keydown',e=>{
   if(e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || menuOpen() || inIntro()) return;
   const el=e.target, tag=(el && el.tagName)||'';
@@ -494,29 +450,42 @@ addEventListener('keydown',e=>{
   const down=e.key==='ArrowDown'||e.key==='PageDown'||(sp&&!e.shiftKey);
   const up=e.key==='ArrowUp'||e.key==='PageUp'||(sp&&e.shiftKey);
   if(!down && !up) return;
-  if(!heroST) return;
-  const y=scrollY;
-  if(y<heroST.start-8 || y>heroST.end+8) return;
-  e.preventDefault();
-  const cur=Math.round(heroST.progress*(SCENES-1));
-  if(down && cur>=SCENES-1){ scrollPastHero(); return; }
-  if(up && cur<=0){ scrollToScene(0); return; }
-  scrollToScene(cur+(down?1:-1));
+  if(glide){ e.preventDefault(); return; }
+  const y=scrollY, end=heroEnd();
+  if(y<=2){ if(up && scene===0) return; e.preventDefault(); carStep(down?1:-1,STEP_MS); }
+  else if(y<end-1){ e.preventDefault(); glideTo(down?end:0); }
 });
 
-document.getElementById('skipIntro').addEventListener('click',()=>{
-  if(introLocked) unlockIntroScroll();
-  else if(!heroST){ createHeroScroll(); refreshHero(); }
-  scrollPastHero();
+document.getElementById('skipIntro').addEventListener('click',()=>{ stepLock=0; wSwallow=false; glideTo(heroEnd()); });
+
+/* safety net: however the page got there (scrollbar, momentum, a link), it never rests between the hero and the logos */
+let lastSY=scrollY, dirDown=true, idleT=0, refreshT=0;
+function settle(){
+  if(glide || inIntro()) return;
+  if(touching && performance.now()-touchT<1200) return;
+  const y=scrollY, end=heroEnd(); if(y<=1 || y>=end-1) return;
+  const tol=VH*.06;
+  glideTo(y>end-tol?end:(y<tol?0:(dirDown?end:0)));
+}
+const settleSoon=()=>{ clearTimeout(idleT); idleT=setTimeout(settle,120); };
+scrollJobs.push(()=>{
+  const y=scrollY; if(Math.abs(y-lastSY)>.5){ dirDown=y>lastSY; lastSY=y; }
+  pinScroll();
+  if(glide) clearTimeout(idleT); else settleSoon();
 });
+const tTrack=e=>{ touching=e.touches.length>0; touchT=performance.now(); if(!touching) settleSoon(); };
+addEventListener('touchstart',e=>{ tTrack(e); if(glide && !heroEl.contains(e.target)) glideStop(); },{passive:true});
+addEventListener('touchmove',e=>{ touchT=performance.now(); if(glide && !heroEl.contains(e.target)) glideStop(); },{passive:true});
+addEventListener('touchend',tTrack,{passive:true}); addEventListener('touchcancel',tTrack,{passive:true});
 
 const syncLg=()=>holdEl.style.setProperty('--lgH',lgEl.offsetHeight+'px');
+function relayout(){ syncLg(); layout(); pinLayout(); }
+const scheduleRefresh=()=>{ clearTimeout(refreshT); refreshT=setTimeout(relayout,120); };
 syncLg();
-addEventListener('resize',()=>{ if(syncVH()||innerWidth>=900) layout(); scheduleRefresh(); });
-addEventListener('load',()=>{ syncVH(); layout(); scheduleRefresh(); });
+addEventListener('resize',()=>{ syncLg(); if(syncVH()||innerWidth>=900){ layout(); pinLayout(); } });
+addEventListener('load',()=>{ syncVH(); relayout(); settleSoon(); });
 if(document.fonts) document.fonts.ready.then(scheduleRefresh);
-armHeroScroll();
-setTimeout(scheduleRefresh,700);
+pinLayout(); setTimeout(scheduleRefresh,700);
 
 const introOn=document.documentElement.classList.contains('intro');
 armT=setTimeout(()=>{ on=true; render(); }, introOn?2250:450);
@@ -727,7 +696,6 @@ scrollJobs.push(drawSvc);
 const nav=document.getElementById('navwrap'), creams=[...document.querySelectorAll('.cream')];
 let lastNavY=scrollY;
 function inHeroZone(){
-  if(heroST) return scrollY<=heroST.end+1;
   return heroEl.getBoundingClientRect().bottom>60;
 }
 function navState(){
@@ -865,9 +833,10 @@ return ()=>{
   cancelAnimationFrame(stirId);
   cancelAnimationFrame(thId);
   cancelAnimationFrame(menuFrame);
-  if(introLocked){ introLocked=false; rootEl.style.overflow=''; document.body.style.overflow=''; }
-  gsap.killTweensOf([lensEl, glassL, window]);
-  killHeroScroll();
+  clearTimeout(idleT);
+  glideStop();
+  window.removeEventListener('wheel',onWheel,{passive:false});
+  gsap.killTweensOf([lensEl, glassL]);
   rootEl.classList.remove('rm');
 };
 })();
