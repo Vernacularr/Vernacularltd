@@ -256,9 +256,7 @@ export default function About() {
             <p className="lead-line rv">Strategists, designers, filmmakers and community specialists, working together to make work people connect with.</p>
             <p className="after-line rv">We treat every brief with care, keep things clear, and make sure every detail earns its place.</p>
           </div>
-          <div className="slot team-slot rv" data-pieces="1.4,.45" role="img" aria-label="Team photo to be supplied">
-            <span className="slot-lbl">Team photo to be supplied</span>
-          </div>
+          {/* Team photo goes here once we have it (the .team-slot styles are still in site.css) */}
         </div>
       </section>
       <div className="seam" data-to="orange" style={{ background: "var(--cream) var(--tex-cream)" }} aria-hidden="true" />
