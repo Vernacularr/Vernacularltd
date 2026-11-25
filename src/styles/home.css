@@ -318,7 +318,7 @@ html.intro .loader{touch-action:none}
 .qb{position:relative;border:0;cursor:pointer;text-align:left;font:500 clamp(15px,1.3vw,18px)/1.3 var(--body);padding:14px 20px 15px;border-radius:22px 22px 22px 6px;background:var(--c);color:var(--on);transition:transform .35s cubic-bezier(.3,1.5,.5,1), opacity .3s ease, box-shadow .3s ease, filter .3s ease;width:100%;min-height:92px;display:flex;flex-direction:column;justify-content:center}
 .qb small{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;opacity:.7;margin-bottom:4px}
 .qb:hover{transform:translateY(-3px)}
-.qb.sel{box-shadow:0 0 0 3px var(--black), 0 14px 26px rgba(27,27,26,.18);z-index:1}
+.qb.sel{z-index:1}
 .qb.dim{opacity:.28;filter:saturate(.3)}
 .qb.more{background:transparent;color:var(--black);border:2px dashed rgba(27,27,26,.4);text-decoration:none}
 .qb.more:hover{border-color:var(--black)}
@@ -757,7 +757,7 @@ html.pt-out .pt .tk i{opacity:0;transform:scale(4);transition:transform .26s cub
 .room .qb small{display:inline-block;align-self:flex-start;width:max-content;background:rgba(242,238,228,.1);color:rgba(242,238,228,.75);opacity:1;padding:5px 10px 4px;border-radius:999px;margin-bottom:10px;line-height:1.2;transition:background-color .3s ease,color .3s ease}
 .room .qb:hover,.room .qb:focus-visible,.room .qb.sel{background:var(--c)!important;color:var(--on)!important}
 .room .qb:hover small,.room .qb:focus-visible small,.room .qb.sel small{background:rgba(27,27,26,.14);color:var(--on)}
-.room .qb.sel{box-shadow:0 0 0 3px var(--black), 0 14px 26px rgba(27,27,26,.22)!important}
+.room .qb.sel{box-shadow:none!important}
 .room .qb.dim{opacity:.55;filter:none}
 /* ---- menu: a frosted blur of the page behind it, no pattern ---- */
 .sheet{background:rgba(27,27,26,.62)!important;-webkit-backdrop-filter:blur(26px) saturate(120%)!important;backdrop-filter:blur(26px) saturate(120%)!important}
@@ -800,3 +800,16 @@ html.pt-out .pt .tk i{opacity:0;transform:scale(4);transition:transform .26s cub
 .pc>div .go{margin-top:auto}
 .pc p{margin-bottom:22px}
 @media (min-width:761px){.pc-sub{min-height:2.7em}}
+/* side by side, the three cards share their rows (square, title, subtitle, text, link), so a title that wraps on
+   one machine (fonts render a little differently on Mac and Windows) moves that row in every card, not just its own */
+@supports (grid-template-rows:subgrid){
+  @media (min-width:761px){
+    .fit-cols{grid-template-rows:auto auto auto 1fr auto;row-gap:0}
+    .pc{display:grid;grid-row:span 5;grid-template-rows:subgrid;row-gap:0;align-items:start;justify-items:start}
+    .pc>div{display:contents}
+    .pc h3{margin:22px 0 10px}
+    .pc-sub{min-height:0;margin:0 0 8px}
+    .pc p{margin:0 0 22px}
+    .pc>div .go{margin-top:0;align-self:end}
+  }
+}

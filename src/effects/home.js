@@ -369,7 +369,7 @@ function pinScroll(){
 }
 
 /* gliding the page between the hero (top) and the logo strip */
-let glide=null, glideId=0, stepLock=0, wSwallow=false; const STEP_MS=850;   // each step holds for this long, so a fast scroll still shows Find, Make and Move one at a time
+let glide=null, glideId=0, stepLock=0, wSwallow=false; const STEP_MS=550;   // each step holds briefly, so a fast scroll still shows Find, Make and Move one at a time
 function glideStop(){ if(glide){ glide=null; cancelAnimationFrame(glideId); rootEl.style.scrollBehavior=''; } }
 function glideTo(y){
   y=Math.max(0,Math.round(y)); const from=scrollY; wSwallow=true;
@@ -387,19 +387,34 @@ function glideStep(now){
   if(t<1) glideId=requestAnimationFrame(glideStep); else { glide=null; rootEl.style.scrollBehavior=''; pinScroll(); }
 }
 /* one step of the carousel; from Move, the step forward leaves the hero for the logo strip */
+/* A push that arrives while a step is still holding is remembered (only the latest one) and runs the moment the
+   hold ends, so every deliberate scroll, swipe or key press counts. */
+let pendDir=0, pendT=0;
 function carStep(dir,lock){
-  const now=performance.now(); if(now<stepLock) return;
+  const now=performance.now();
+  if(now<stepLock){ pendDir=dir; clearTimeout(pendT); pendT=setTimeout(runPending, stepLock-now+10); return; }
+  pendDir=0;
   if(dir>0 && scene===2){ stepLock=now+lock; glideTo(heroEnd()); return; }
   const k=scene+dir; if(k<0 || k>2) return;
   stepLock=now+lock; go(k); pinScroll();
 }
+function runPending(){
+  const dir=pendDir; pendDir=0;
+  if(!dir || glide || menuOpen() || inIntro() || scrollY>2) return;   // only while the hero is still in place
+  if(dir>0 && scene===2) return;   // a saved-up push never carries the page past Move; leaving the hero needs its own scroll
+  carStep(dir,STEP_MS);
+}
 
 /* wheel and trackpad. A trackpad flick keeps sending events for a second or two as it coasts, so a new step
-   needs a new push (a pause, or the stream speeding up again), never the tail of the last one. */
-let wT=0, wPeak=0, wMin=0, wheelOn=false;
+   needs a new push, never the tail of the last one. A new push is: a short pause, a change of direction,
+   or the stream speeding up again after it had been slowing down (a second swipe during the coast). */
+let wT=0, wPeak=0, wMin=0, wDir=0, wheelOn=false;
 function wheelFresh(e,dy){
-  const t=e.timeStamp||performance.now(), a=Math.abs(dy), gap=t-wT; wT=t;   // the event's own time, so a busy page cannot fake a pause
-  if(gap>240){ wPeak=wMin=a; return true; }                                  // a new push only after the wheel or trackpad has stopped
+  const t=e.timeStamp||performance.now(), a=Math.abs(dy), dir=dy>0?1:-1, gap=t-wT; wT=t;   // the event's own time, so a busy page cannot fake a pause
+  const turned=dir!==wDir; wDir=dir;
+  // 300ms: the ticks of one mouse-wheel flick can arrive a fifth of a second apart, and must still count as one push
+  if(gap>300 || turned){ wPeak=wMin=a; return true; }
+  if(wPeak>=40 && wMin<wPeak*.35 && a>wMin*3 && a-wMin>25){ wPeak=wMin=a; return true; }   // a trackpad coast had died right down and a new swipe picked it up again
   if(a>wPeak){ wPeak=a; wMin=a; } else if(a<wMin) wMin=a;
   return false;
 }
@@ -841,6 +856,7 @@ return ()=>{
   cancelAnimationFrame(fieldRaf);
   cancelAnimationFrame(menuFrame);
   clearTimeout(idleT);
+  clearTimeout(pendT);
   glideStop();
   window.removeEventListener('wheel',onWheel,{passive:false});
   gsap.killTweensOf([lensEl, glassL]);
