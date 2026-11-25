@@ -341,8 +341,12 @@ function stagePoint(e){
 heroEl.addEventListener('pointermove',e=>{
   const p=stagePoint(e);
   mx=p.x; my=p.y; moved=true; holdBriefly();
-  if(p.x>700){ lx=Math.max(830,Math.min(1170,p.x)); ly=Math.max(300,Math.min(560,p.y)); trackLens(); }
+  if(p.x>700){ lx=Math.max(830,Math.min(1170,p.x)); ly=Math.max(300,Math.min(560,p.y));
+    // the glass searches again wherever it moves: the nearest piece lights up and the view re-centres on it
+    if(scene===0){ if(!fieldRaf) fieldRaf=requestAnimationFrame(()=>{ fieldRaf=0; drawField(); }); }
+    else trackLens(); }
 },{passive:true});
+let fieldRaf=0;
 render();
 
 /* ---- The hero is a vertical carousel ----
@@ -832,6 +836,7 @@ return ()=>{
   cancelAnimationFrame(rollId);
   cancelAnimationFrame(stirId);
   cancelAnimationFrame(thId);
+  cancelAnimationFrame(fieldRaf);
   cancelAnimationFrame(menuFrame);
   clearTimeout(idleT);
   glideStop();
