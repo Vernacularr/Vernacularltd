@@ -791,3 +791,9 @@ html.pt-out .pt .tk i{opacity:0;transform:scale(4);transition:transform .26s cub
 .sec-head p,.faq .sub{font-size:18px!important;line-height:1.5!important}
 .pillar p,.cs p,.pc p{font-size:16px!important;line-height:1.5!important}
 .pc-sub{font-size:17px!important;line-height:1.35!important}
+/* audience cards: text starts at the top in every card, links line up at the bottom */
+.pc{justify-content:flex-start}
+.pc>div{flex:1;display:flex;flex-direction:column;align-items:flex-start;margin-top:18px}
+.pc>div .go{margin-top:auto}
+.pc p{margin-bottom:22px}
+@media (min-width:761px){.pc-sub{min-height:2.7em}}
