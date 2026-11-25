@@ -184,7 +184,7 @@ export default function Home() {
       </div>
       <div className="logo-hold" id="logoHold">
         <section className="ribbons logos" aria-label="Brands we've worked with">
-          <p className="logos-h mk" data-anchor="">Brands turning crowd noise into true community.</p>
+          <p className="logos-h mk" data-anchor="">Brands we have helped turn noise into true community.</p>
           <div className="logo-row">
             <div className="logo-track" id="logoTrack" />
           </div>
