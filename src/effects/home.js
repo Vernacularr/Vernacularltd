@@ -521,6 +521,8 @@ const LOGOS=[
 ];
 const lseq=hide=>LOGOS.map(([n,f,h,ar])=>`<span class="lg lg-img" ${hide?'aria-hidden="true"':`role="img" aria-label="${n}"`}><i style="height:${h}em;aspect-ratio:${ar};--m:url(/img/clients/${f}.svg)"></i></span>`).join('');
 document.getElementById('logoTrack').innerHTML=lseq(false)+lseq(true);
+// fetch every logo now, while the visitor is on the hero, so the strip is complete when it scrolls into view
+LOGOS.forEach(([,f])=>{ const im=new Image(); im.src=`/img/clients/${f}.svg`; });
 
 /* ---- About: one plain statement, coming into focus slowly as you scroll ---- */
 const SAY=['We find the language your people already trust','and build your brand around it.','Then we make work that stops the scroll,','and move it through the communities','who inspired it.'];
