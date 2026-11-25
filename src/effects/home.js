@@ -526,19 +526,25 @@ armT=setTimeout(()=>{ on=true; render(); }, introOn?2250:450);
 // [name, svg file, height in em (wordmarks shorter, round badges taller), svg width/height]
 // Each logo is drawn as a shape filled with the text colour, so it can turn orange on hover.
 const LOGOS=[
-  ['Adidas','adidas',1.5,'536/320'],
-  ['Google','google',1.2,'720/240'],
-  ['Cadbury','cadbury',1.4,'680/288'],
-  ['Nivea','nivea',1.7,'360/368'],
-  ['Vaseline','vaseline',1.5,'464/320'],
-  ['Martell','martell',1.4,'720/288'],
-  ['inDrive','indrive',1.1,'720/216'],
-  ['Glovo','glovo',1.15,'712/248'],
-  ['Chowdeck','chowdeck',1.7,'368/368'],
-  ['Bolt Food','bolt-food',1.6,'352/352'],
-  ['Leatherback','leatherback',.7,'712/112'],
-  ['Revoo','revoo',.85,'720/136'],
-  ['TomTom','tomtom',1.5,'488/312']
+  ['Adidas','adidas',1.4,'1195/581'],
+  ['Google','google',1.2,'272/92'],
+  ['Meta','meta',.95,'2404/490'],
+  ['Cadbury','cadbury',1.3,'2404/980'],
+  ['Nivea','nivea',1.7,'2404/2404'],
+  ['Vaseline','vaseline',1.5,'2402/1630'],
+  ['Martell','martell',1.3,'2404/916'],
+  ['inDrive','indrive',1.1,'2404/682'],
+  ['Glovo','glovo',1.2,'2404/794'],
+  ['Chowdeck','chowdeck',1.7,'2404/2404'],
+  ['Breet','breet',1.6,'2404/2404'],
+  ['Temu','temu',1,'2404/582'],
+  ['OPay','opay',1.2,'2404/801'],
+  ['Flutterwave','flutterwave',.85,'2402/383'],
+  ['Leatherback','leatherback',.78,'2404/326'],
+  ['Revoo','revoo',.85,'2404/406'],
+  ['itel','itel',1.5,'2398/1522'],
+  ['Boomplay','boomplay',.95,'2404/507'],
+  ['TomTom','tomtom',1.5,'1760/1105']
 ];
 const lseq=hide=>LOGOS.map(([n,f,h,ar])=>`<span class="lg lg-img" ${hide?'aria-hidden="true"':`role="img" aria-label="${n}"`}><i style="height:${h}em;aspect-ratio:${ar};--m:url(/img/clients/${f}.svg)"></i></span>`).join('');
 document.getElementById('logoTrack').innerHTML=lseq(false)+lseq(true);
