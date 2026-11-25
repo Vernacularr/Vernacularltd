@@ -267,29 +267,31 @@ export default function Home() {
               <div className="cs-pop">
                 <div className="cs-pop-in">
                   <div className="cs-vis" aria-hidden="true">
-                    <span className="cs-ph">Campaign image</span>
+                    <div className="cs-shots">
+                      <img alt="" loading="lazy" decoding="async" src="/img/indrive-card.jpg" />
+                    </div>
                   </div>
                 </div>
               </div>
             </a>
             {" "}
-            <a className="cs" href="/work/adidas">
+            <a className="cs" href="/work/google">
               <div className="cs-info">
                 <div>
-                  <h3>adidas Originals</h3>
-                  <p>
-                    Delivered in partnership to anchor adidas Originals inside Lagos street style, pairing local creative voices with the Three Stripes in a way that felt earned.
-                  </p>
+                  <h3>Google AI Mode</h3>
+                  <p>An influencer-led creative direction that turned asking the internet for help into a reason to try Google AI Mode.</p>
                 </div>
                 <div className="cs-foot">
-                  <span className="cs-tag" style={{ "--sc": "#F2EEE4" }}>Partnered work</span>
+                  <span className="cs-tag" style={{ "--sc": "#FDC319" }}>Chorus</span>
                   <span className="cs-go">{"View project "}<i aria-hidden="true">→</i></span>
                 </div>
               </div>
               <div className="cs-pop">
                 <div className="cs-pop-in">
                   <div className="cs-vis" aria-hidden="true">
-                    <span className="cs-ph">Campaign image</span>
+                    <div className="cs-shots">
+                      <img alt="" loading="lazy" decoding="async" src="/img/google-card.jpg" />
+                    </div>
                   </div>
                 </div>
               </div>

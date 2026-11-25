@@ -27,7 +27,7 @@ export default function CaseRevoo() {
       <section className="dark" style={{ paddingBottom: "clamp(60px,8vw,110px)" }} aria-label="Project image">
         <div className="inner">
           <figure className="st-cover rv">
-            <img src="/img/revoo-booth.jpg" alt="The Revoo booth: an electric scooter in front of the REVOO model panels" decoding="async" />
+            <img src="/img/revoo-booth.jpg" width="1448" height="1086" alt="The Revoo booth: an electric scooter in front of the REVOO model panels" decoding="async" />
           </figure>
         </div>
       </section>
@@ -47,7 +47,7 @@ export default function CaseRevoo() {
                 </p>
               </div>
               <figure className="st-img">
-                <img src="/img/revoo-1.jpg" alt="The Revoo pavilion with visitors on the exhibition floor" loading="lazy" decoding="async" />
+                <img src="/img/revoo-1.jpg" width="1200" height="900" alt="The Revoo pavilion with visitors on the exhibition floor" loading="lazy" decoding="async" />
               </figure>
             </div>
             <div className="st-row rv flip">
@@ -59,7 +59,7 @@ export default function CaseRevoo() {
                 </p>
               </div>
               <figure className="st-img">
-                <img src="/img/revoo-2.jpg" alt="Two visitors trying a Revoo electric bike" loading="lazy" decoding="async" />
+                <img src="/img/revoo-2.jpg" width="640" height="785" alt="Two visitors trying a Revoo electric bike" loading="lazy" decoding="async" />
               </figure>
             </div>
             <div className="st-row rv">
@@ -71,7 +71,7 @@ export default function CaseRevoo() {
                 </p>
               </div>
               <figure className="st-img">
-                <img src="/img/revoo-3.jpg" alt="A visitor seated on a Revoo bike at the pavilion" loading="lazy" decoding="async" />
+                <img src="/img/revoo-3.jpg" width="640" height="811" alt="A visitor seated on a Revoo bike at the pavilion" loading="lazy" decoding="async" />
               </figure>
             </div>
             <div className="st-row rv flip">
@@ -81,32 +81,16 @@ export default function CaseRevoo() {
                 <p>Those moments went straight to feeds, putting real Lagos riders in front of people who would never have walked into the exhibition.</p>
               </div>
               <figure className="st-img">
-                <img src="/img/revoo-4.jpg" alt="A visitor smiling on a Revoo electric scooter" loading="lazy" decoding="async" />
+                <img src="/img/revoo-4.jpg" width="640" height="853" alt="A visitor smiling on a Revoo electric scooter" loading="lazy" decoding="async" />
               </figure>
             </div>
           </div>
         </div>
       </section>
       <div className="seam" data-to="dark" style={{ background: "var(--cream) var(--tex-cream)" }} aria-hidden="true" />
-      <section className="sec dark st-results" aria-labelledby="st-r">
+      <section className="sec dark st-results" aria-label="Next project">
         <div className="inner">
-          <span className="eyebrow mk rv" data-anchor="">THE RESULT</span>
-          <h2 className="sec-h rv" id="st-r">People rode it. Then they talked about it.</h2>
-          <div className="st-stats">
-            <div className="st-stat rv">
-              <b>1,200+</b>
-              <span>test rides on the floor</span>
-            </div>
-            <div className="st-stat rv">
-              <b>40</b>
-              <span>creators capturing the day</span>
-            </div>
-            <div className="st-stat rv">
-              <b>2M+</b>
-              <span>views across feeds</span>
-            </div>
-          </div>
-          <a className="next-cs rv" href="/work/indrive" style={{ "--c": "#16CDEB" }}>
+          <a className="next-cs rv" href="/work/indrive" style={{ marginTop: 0, "--c": "#16CDEB" }}>
             <small>Next project</small>
             <span>inDrive Nigeria</span>
             <i aria-hidden="true">→</i>

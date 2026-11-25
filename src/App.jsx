@@ -13,6 +13,7 @@ import ForAgencies from './pages/ForAgencies.jsx';
 import ForCreators from './pages/ForCreators.jsx';
 import CaseRevoo from './pages/CaseRevoo.jsx';
 import CaseIndrive from './pages/CaseIndrive.jsx';
+import CaseGoogle from './pages/CaseGoogle.jsx';
 import CaseAdidas from './pages/CaseAdidas.jsx';
 
 // Any click on an internal link (href starting with "/") plays the page-change animation,
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/work" element={<Work />} />
         <Route path="/work/revoo" element={<CaseRevoo />} />
         <Route path="/work/indrive" element={<CaseIndrive />} />
+        <Route path="/work/google" element={<CaseGoogle />} />
         <Route path="/work/adidas" element={<CaseAdidas />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/for-brands" element={<ForBrands />} />

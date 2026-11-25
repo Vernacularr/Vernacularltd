@@ -47,24 +47,24 @@ export default function Work() {
               <span className="wk-go">{"View project "}<i aria-hidden="true">→</i></span>
             </div>
             <div className="wk-vis">
-              <div className="slot " data-pieces="1.3,.5" role="img" aria-label="Campaign image to be supplied">
-                <span className="slot-lbl">Campaign image to be supplied</span>
+              <div className="wk-shots one">
+                <img src="/img/indrive-card.jpg" alt="A wall of inDrive Nigeria social posts: Feel the Fairness, Keke Don Land, and reels from the always-on feed" loading="lazy" decoding="async" />
               </div>
             </div>
           </a>
           {" "}
-          <a className="wk rv" id="adidas" href="/work/adidas">
+          <a className="wk rv" id="google" href="/work/google">
             <div className="wk-info">
-              <span className="wk-tag" style={{ "--sc": "#F2EEE4" }}>PARTNERED WORK</span>
-              <h2>adidas Originals</h2>
+              <span className="wk-tag" style={{ "--sc": "#FDC319" }}>CHORUS</span>
+              <h2>Google AI Mode</h2>
               <p>
-                Delivered in partnership to anchor adidas Originals inside Lagos street style, pairing local creative voices with the Three Stripes in a way that felt earned.
+                An influencer-led creative direction built on a habit everyone knows: asking the internet for help. First the chaos, then the answer with Google AI Mode.
               </p>
               <span className="wk-go">{"View project "}<i aria-hidden="true">→</i></span>
             </div>
             <div className="wk-vis">
-              <div className="slot " data-pieces="1.3,.5" role="img" aria-label="Campaign image to be supplied">
-                <span className="slot-lbl">Campaign image to be supplied</span>
+              <div className="wk-shots one">
+                <img src="/img/google-card.jpg" alt="Stills from four creators' Google AI Mode reels" loading="lazy" decoding="async" />
               </div>
             </div>
           </a>

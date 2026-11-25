@@ -523,24 +523,25 @@ armT=setTimeout(()=>{ on=true; render(); }, introOn?2250:450);
 
 /* ---- Ticker ---- */
 /* ---- Client logos (files in public/img/clients) ---- */
-// [name, file, height in em: wordmarks shorter, round badges taller]
+// [name, svg file, height in em (wordmarks shorter, round badges taller), svg width/height]
+// Each logo is drawn as a shape filled with the text colour, so it can turn orange on hover.
 const LOGOS=[
-  ['Adidas','adidas',1.5],
-  ['Google','google',1.1],
-  ['Cadbury','cadbury',1.4],
-  ['Nivea','nivea',1.7],
-  ['Vaseline','vaseline',1.5],
-  ['Martell','martell',1.4],
-  ['inDrive','indrive',1],
-  ['Glovo','glovo',1.15],
-  ['Chowdeck','chowdeck',1.7],
-  ['Bolt Food','bolt-food',1.6],
-  ['Leatherback','leatherback',.55],
-  ['Revoo','revoo',.7],
-  ['TomTom','tomtom',1.5]
+  ['Adidas','adidas',1.5,'536/320'],
+  ['Google','google',1.2,'720/240'],
+  ['Cadbury','cadbury',1.4,'680/288'],
+  ['Nivea','nivea',1.7,'360/368'],
+  ['Vaseline','vaseline',1.5,'464/320'],
+  ['Martell','martell',1.4,'720/288'],
+  ['inDrive','indrive',1.1,'720/216'],
+  ['Glovo','glovo',1.15,'712/248'],
+  ['Chowdeck','chowdeck',1.7,'368/368'],
+  ['Bolt Food','bolt-food',1.6,'352/352'],
+  ['Leatherback','leatherback',.7,'712/112'],
+  ['Revoo','revoo',.85,'720/136'],
+  ['TomTom','tomtom',1.5,'488/312']
 ];
-const lseq=LOGOS.map(([n,f,h])=>`<span class="lg lg-img"><img src="/img/clients/${f}.png" alt="${n}" style="height:${h}em" decoding="async"></span>`).join('')+`<span class="lg lg-more">and more</span>`;
-document.getElementById('logoTrack').innerHTML=lseq+lseq;
+const lseq=hide=>LOGOS.map(([n,f,h,ar])=>`<span class="lg lg-img" ${hide?'aria-hidden="true"':`role="img" aria-label="${n}"`}><i style="height:${h}em;aspect-ratio:${ar};--m:url(/img/clients/${f}.svg)"></i></span>`).join('');
+document.getElementById('logoTrack').innerHTML=lseq(false)+lseq(true);
 
 /* ---- About: one plain statement, coming into focus slowly as you scroll ---- */
 const SAY=['We find the language your people already trust','and build your brand around it.','Then we make work that stops the scroll,','and move it through the communities','who inspired it.'];

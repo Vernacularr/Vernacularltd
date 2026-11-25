@@ -434,10 +434,8 @@ body.menu-open .sheet nav a{opacity:1;transform:none}
 .lg:hover{color:var(--cream)}
 .lg svg{width:1.15em;height:1.15em;flex:none;fill:currentColor;transition:fill .25s ease}
 .lg:hover svg{fill:var(--orange)}
-.lg-img img{display:block;width:auto;opacity:.6;transition:opacity .25s ease}
-.lg-img:hover img{opacity:1}
-.lg-more{font-size:.6em;font-weight:600}
-@media (prefers-reduced-motion: reduce){.logo-track{animation:none}}
+.lg-img i{display:block;background-color:rgba(242,238,228,.85);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;transition:background-color .25s ease}
+.lg-img:hover i{background-color:var(--orange)}@media (prefers-reduced-motion: reduce){.logo-track{animation:none}}
 
 /* ---------- Welcome loader + hero entrance ---------- */
 .loader{position:fixed;inset:0;z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--black) var(--tex-dark);transition:transform .85s cubic-bezier(.7,0,.2,1), border-radius .85s cubic-bezier(.7,0,.2,1);cursor:pointer}
