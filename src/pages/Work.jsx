@@ -64,7 +64,7 @@ export default function Work() {
             </div>
             <div className="wk-vis">
               <div className="wk-shots one">
-                <img className="endcard" src="/img/google-endcard.jpg" alt="The campaign end card: ask Google AI Mode. Figure it out with Google." loading="lazy" decoding="async" />
+                <img className="endcard" src="/img/google-card-night.webp" alt="ask Google AI Mode. Figure it out with Google, over a phone glowing on a side table by a Lagos window at night" loading="lazy" decoding="async" />
               </div>
             </div>
           </a>

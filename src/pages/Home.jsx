@@ -290,7 +290,7 @@ export default function Home() {
                 <div className="cs-pop-in">
                   <div className="cs-vis" aria-hidden="true">
                     <div className="cs-shots">
-                      <img alt="" loading="lazy" decoding="async" className="endcard" src="/img/google-endcard.jpg" />
+                      <img alt="" loading="lazy" decoding="async" className="endcard" src="/img/google-card-night.webp" />
                     </div>
                   </div>
                 </div>
