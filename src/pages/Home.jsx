@@ -202,7 +202,7 @@ export default function Home() {
         <div className="inner">
           <div className="sec-head">
             <div>
-              <span className="eyebrow mk rv" data-anchor="">Built for the brands that can’t miss.</span>
+              <h2 className="svc-h mk rv" data-anchor="">Built for the brands that can’t miss.</h2>
               <h2 id="fmmTitle" className="rv">
                 <span className="y">Find the language.</span>
                 {" "}

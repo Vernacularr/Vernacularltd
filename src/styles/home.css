@@ -825,3 +825,7 @@ body.menu-open .sheet{visibility:visible;transition:clip-path .7s cubic-bezier(.
 
 /* Google card: the campaign end card on black, kept centred in every card shape */
 .cs-shots img.endcard,.wk-shots img.endcard{object-position:50% 50%!important}
+
+/* services: the section line is a heading, sized like the Work heading below it */
+.sec-head h2.svc-h{margin-top:0}
+@media (max-width:820px){.sec-head h2.svc-h.mk{padding-left:0}}
