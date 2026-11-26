@@ -48,7 +48,7 @@ export default function Work() {
             </div>
             <div className="wk-vis">
               <div className="wk-shots one">
-                <img className="fair" src="/img/indrive-fairness.jpg" alt="inDrive Nigeria's Feel the Fairness post: a wide Abuja avenue under Zuma Rock" loading="lazy" decoding="async" />
+                <img className="fair" src="/img/indrive-card-fairness.webp" alt="inDrive Nigeria's Feel the Fairness post: a wide Abuja avenue under Zuma Rock" loading="lazy" decoding="async" />
               </div>
             </div>
           </a>

@@ -1234,7 +1234,7 @@ body.menu-open .sheet{visibility:visible;transition:clip-path .7s cubic-bezier(.
 @media (max-width:640px){.vph-tk{right:6%;width:38%}}
 
 /* inDrive card: the Feel the Fairness flyer, cropped to keep its headline centred with the avenue below */
-.cs-shots img.fair,.wk-shots img.fair{object-position:50% 58%!important}
+.cs-shots img.fair,.wk-shots img.fair{object-position:50% 50%!important}
 
 /* Google card: the campaign end card on black, kept centred in every card shape */
 .cs-shots img.endcard,.wk-shots img.endcard{object-position:50% 50%!important}

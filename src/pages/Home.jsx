@@ -268,7 +268,7 @@ export default function Home() {
                 <div className="cs-pop-in">
                   <div className="cs-vis" aria-hidden="true">
                     <div className="cs-shots">
-                      <img alt="" loading="lazy" decoding="async" className="fair" src="/img/indrive-fairness.jpg" />
+                      <img alt="" loading="lazy" decoding="async" className="fair" src="/img/indrive-card-fairness.webp" />
                     </div>
                   </div>
                 </div>
