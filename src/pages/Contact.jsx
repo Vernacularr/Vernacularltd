@@ -214,7 +214,7 @@ export default function Contact() {
               <span className="ct-hook">WRITE US A NOTE</span>
               <h2 className="ct-h">Every Good Conversation Starts Somewhere.</h2>
               <p className="ct-body">
-                {"We'd love to hear from you. If you'd prefer to email us instead, reach out to "}<a href="mailto:info@vernacular.com">info@vernacular.com.</a>
+                {"We'd love to hear from you. If you'd prefer to email us instead, reach out to "}<a href="mailto:contact@vernacularltd.com">contact@vernacularltd.com</a>.
               </p>
               <div className="ct-nudge">
                 <span className="nd-tk" aria-hidden="true">

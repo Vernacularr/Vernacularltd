@@ -29,9 +29,7 @@ const CTAS = [
 
 export const CONTACT = {
   city: 'Lagos, Nigeria',
-  email: 'info@vernacular.com',
-  phone: '081123456789',
-  phoneHref: 'tel:+23481123456789',
+  email: 'contact@vernacularltd.com',
 };
 
 export default function Footer({ current, home = false }) {
@@ -70,7 +68,6 @@ export default function Footer({ current, home = false }) {
             <h3>Find us</h3>
             <p>{CONTACT.city}</p>
             <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
-            <a href={CONTACT.phoneHref}>{CONTACT.phone}</a>
             <Socials />
           </div>
         </div>
