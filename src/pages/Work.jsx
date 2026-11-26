@@ -48,7 +48,7 @@ export default function Work() {
             </div>
             <div className="wk-vis">
               <div className="wk-shots one">
-                <img src="/img/indrive-card.jpg" alt="A wall of inDrive Nigeria social posts: Feel the Fairness, Keke Don Land, and reels from the always-on feed" loading="lazy" decoding="async" />
+                <img className="fair" src="/img/indrive-fairness.jpg" alt="inDrive Nigeria's Feel the Fairness post: a wide Abuja avenue under Zuma Rock" loading="lazy" decoding="async" />
               </div>
             </div>
           </a>
@@ -64,7 +64,7 @@ export default function Work() {
             </div>
             <div className="wk-vis">
               <div className="wk-shots one">
-                <img src="/img/google-card.jpg" alt="Stills from four creators' Google AI Mode reels" loading="lazy" decoding="async" />
+                <img className="endcard" src="/img/google-endcard.jpg" alt="The campaign end card: ask Google AI Mode. Figure it out with Google." loading="lazy" decoding="async" />
               </div>
             </div>
           </a>

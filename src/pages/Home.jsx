@@ -268,7 +268,7 @@ export default function Home() {
                 <div className="cs-pop-in">
                   <div className="cs-vis" aria-hidden="true">
                     <div className="cs-shots">
-                      <img alt="" loading="lazy" decoding="async" src="/img/indrive-card.jpg" />
+                      <img alt="" loading="lazy" decoding="async" className="fair" src="/img/indrive-fairness.jpg" />
                     </div>
                   </div>
                 </div>
@@ -290,7 +290,7 @@ export default function Home() {
                 <div className="cs-pop-in">
                   <div className="cs-vis" aria-hidden="true">
                     <div className="cs-shots">
-                      <img alt="" loading="lazy" decoding="async" src="/img/google-card.jpg" />
+                      <img alt="" loading="lazy" decoding="async" className="endcard" src="/img/google-endcard.jpg" />
                     </div>
                   </div>
                 </div>
