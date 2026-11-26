@@ -760,7 +760,13 @@ html.pt-out .pt .tk i{opacity:0;transform:scale(4);transition:transform .26s cub
 .room .qb.sel{box-shadow:none!important}
 .room .qb.dim{opacity:.55;filter:none}
 /* ---- menu: a frosted blur of the page behind it, no pattern ---- */
-.sheet{background:rgba(27,27,26,.62)!important;-webkit-backdrop-filter:blur(26px) saturate(120%)!important;backdrop-filter:blur(26px) saturate(120%)!important}
+/* solid brand black: a see-through blur can't be drawn while the circle is still opening, so it flashed as a flat grey disc */
+.sheet{background:var(--black) var(--tex-dark)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* closing: the circle shrinks to a 1px dot (never 0, which some browsers treat as "no clip" for a frame and flash the
+   whole menu), and the sheet is hidden the moment the shrink ends */
+.sheet{clip-path:circle(1px at calc(100% - 60px) 46px);visibility:hidden;will-change:clip-path;transition:clip-path .7s cubic-bezier(.8,0,.3,1), visibility 0s linear .7s}
+body.menu-open .sheet{visibility:visible;transition:clip-path .7s cubic-bezier(.7,0,.2,1), visibility 0s}
+
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.sheet{background:rgba(27,27,26,.96)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
 
 /* ---- footer: social pages as icons ---- */
