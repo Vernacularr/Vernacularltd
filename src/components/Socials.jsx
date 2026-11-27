@@ -1,14 +1,14 @@
 // Social icons used in the menu and the footer.
-// TODO: add the real TikTok, LinkedIn and X links (href="#" for now).
+// TODO: add the real X link (href="#" for now).
 const ICON = {
   width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
   strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
 };
 
 export const SOCIAL_LINKS = {
-  instagram: 'https://www.instagram.com/vernacular.co/',
-  tiktok: '#',
-  linkedin: '#',
+  instagram: 'https://www.instagram.com/vernacularco/',
+  tiktok: 'https://www.tiktok.com/@vernacularco',
+  linkedin: 'https://www.linkedin.com/company/vernacularltd/',
   x: '#',
 };
 

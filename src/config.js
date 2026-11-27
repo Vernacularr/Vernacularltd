@@ -3,4 +3,4 @@
 const fromEnv = import.meta.env.VITE_SHOW_FULL_SITE
 export const showFullSite = fromEnv === undefined ? false : fromEnv === 'true'
 
-export const instagramDmUrl = 'https://ig.me/m/vernacular.co'
+export const instagramDmUrl = 'https://ig.me/m/vernacularco'
